@@ -44,7 +44,7 @@ No. A trigger could refuse a write that takes stock below zero, as the `CHECK` d
 
 - `race_test.py`, unmodified: 10 of 10 runs passed. In the flash-sale test, 50 sold, 350 told "out of stock", 0 errors, stock 0.
 - Testing caught a bug in my first version: a call straight after the update reset PL/pgSQL's `FOUND` flag, so refused buyers were treated as winners. The new price constraint blocked those bad orders. It's fixed, and it shows why the database rules sit underneath the function.
-- `sql/12_self_checks.sql` re-tests the last-unit case on every build.
+- `sql/11_self_checks.sql` re-tests the last-unit case on every build.
 
 ## What it survives
 

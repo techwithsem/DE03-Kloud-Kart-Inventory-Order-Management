@@ -30,4 +30,4 @@ If customers were actually charged the header totals, about 1,600 orders carry t
 
 ## What it survives
 
-The definition lives in one view, so every figure (totals, months, running totals, rank) changes together. `sql/12_self_checks.sql` re-derives the total from the raw tables on every build.
+The definition lives in one view, so every figure (totals, months, running totals, rank) changes together. `sql/11_self_checks.sql` re-derives the total from the raw tables on every build.

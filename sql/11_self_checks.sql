@@ -1,4 +1,4 @@
--- 12_self_checks.sql
+-- 11_self_checks.sql
 -- checks that the main outputs are actually right, run at the end of every build.
 -- each check works the answer out a second, independent way and stops the build with a
 -- clear message if the two disagree. nothing here changes data: the order test runs

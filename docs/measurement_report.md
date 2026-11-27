@@ -17,7 +17,7 @@ Every figure comes from a real run. Raw output is in [benchmarks/](../benchmarks
 | With 2 indexes | 10,000 / 20,000 | 29.9 s / 106.4 s |
 | With 2 indexes, scaled up | 40,420 | **~7 minutes** |
 
-Without indexes, the plan re-reads all 336,559 order lines for every customer and month ([explain_before.txt](../benchmarks/explain_before.txt)). Indexes fix the lookups ([explain_step1_indexes.txt](../benchmarks/explain_step1_indexes.txt)), but the time still grows with the *square* of the customer count: doubling from 10,000 to 20,000 customers made it 3.6× slower. That's the ranking step, which compares every customer with every other one. It's also why Adwoa's report keeps getting slower.
+Without indexes, the plan re-reads all 336,559 order lines for every customer and month ([explain_before.txt](../benchmarks/explain_before.txt)). Indexes fix the lookups, but the time still grows with the *square* of the customer count: doubling from 10,000 to 20,000 customers made it 3.6× slower. That's the ranking step, which compares every customer with every other one. It's also why Adwoa's report keeps getting slower.
 
 **After.** [08_monday_report.sql](../sql/08_monday_report.sql) reads the orders once and totals them per customer per month, giving 103,165 rows. The monthly columns, running totals (window functions) and ranking (one sort) are all worked out from that. The result is stored and rebuilt on demand ([explain_after.txt](../benchmarks/explain_after.txt)).
 
@@ -29,7 +29,7 @@ Without indexes, the plan re-reads all 336,559 order lines for every customer an
 | Top 100 | 0.2 ms |
 
 **Problems found and fixed along the way:**
-- **The first version rebuilt in 15.5 s.** The report-date function ran about 1.3 million times, once per row in 13 monthly filters, because a function with its own settings can't be inlined. Computing the date once per query brought it to 4.1 s ([explain_after_v1_function_per_row.txt](../benchmarks/explain_after_v1_function_per_row.txt)).
+- **The first version rebuilt in 15.5 s.** The report-date function ran about 1.3 million times, once per row in 13 monthly filters, because a function with its own settings can't be inlined. Computing the date once per query brought it to 4.1 s.
 - **Excluding impossible quantities took it back up to 6.8 s**, because that check re-read every order line. A partial index on just those lines brought it to 5.9 s.
 
 | Version | Full report | vs before |
@@ -57,19 +57,6 @@ The full live rollup takes **15–26 ms** ([09_category_rollup.sql](../sql/09_ca
 | Audit trail: 12 buyers, 5 units | All 5 sales logged |
 
 **Why about 6 s here.** Only one checkout at a time can take stock from a product, and each holds its turn until its order is safely on disk. On this laptop that disk write takes 50–380 ms; with the wait switched off (test only) a call takes 5 ms. Losers write nothing, so the queue is roughly 50 winners × the disk write. On a normal server SSD (about 1 ms per write) it should clear in well under a second. **That figure is an estimate, not measured.** I kept the safe setting, because switching the wait off could lose confirmed orders in a power cut.
-
-### Beyond the brief: 4,000 orders at once
-
-[load_test.py](../benchmarks/load_test.py), run with `python main.py load`, works the way a real website would: 100 pooled connections take turns sending 4,000 buy attempts, all released together. Output: [load_test_results.txt](../benchmarks/load_test_results.txt).
-
-| Scenario | Sold | Out of stock | Errors / "busy" | Oversold | Wall clock (3 runs) |
-|---|---|---|---|---|---|
-| A. 4,000 people, one product with 50 units | 50 | 3,950 | 0 / 0 | none | 1.02–1.22 s |
-| B. 4,000 people, 100 products with 30 units each | 3,000 | 1,000 | 0 / 0 | none | 1.22–1.30 s |
-
-Every sale had exactly one order and one stock movement. Median wait per attempt was 8 ms (A) and 23 ms (B).
-
-This is much faster than the 400-buyer race test (5–9 s), because the race test opens 400 brand-new connections at the same moment, and each one starts a new database process. Reusing a pool of 100 connections avoids that. **The lesson for go-live: put a connection pool (PgBouncer or the app's own) in front of the database.** With 4,000 direct connections, 3,500 would be refused, because the limit is 500.
 
 ## 4. Morning stock drift check
 

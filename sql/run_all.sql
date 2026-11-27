@@ -33,10 +33,8 @@ ANALYZE;
 \ir 09_category_rollup.sql
 \echo '== 10 improvement: stock drift check'
 \ir 10_stock_drift.sql
-\echo '== 11 roles and permissions'
-\ir 11_roles.sql
-\echo '== 12 self checks'
-\ir 12_self_checks.sql
+\echo '== 11 self checks'
+\ir 11_self_checks.sql
 
 \echo '== done. data quality before and after:'
 SELECT finding, rows_before, rows_now

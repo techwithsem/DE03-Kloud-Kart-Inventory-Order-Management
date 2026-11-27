@@ -26,8 +26,7 @@ Kloud Kart (about 4,000 orders a day, one PostgreSQL server) was selling the sam
 | [08_monday_report](sql/08_monday_report.sql) | Monday report |
 | [09_category_rollup](sql/09_category_rollup.sql) | Low stock by category |
 | [10_stock_drift](sql/10_stock_drift.sql) | Morning stock drift check |
-| [11_roles](sql/11_roles.sql) | Roles and permissions |
-| [12_self_checks](sql/12_self_checks.sql) | Prove the outputs are right, or stop the build |
+| [11_self_checks](sql/11_self_checks.sql) | Prove the outputs are right, or stop the build |
 
 `M03_Resources/` is the supplied bundle, unchanged; [checksums.sha256](checksums.sha256) proves it. [main.py](main.py) runs everything: the rebuild, single SQL files and the race test.
 
@@ -53,21 +52,7 @@ python main.py race
 
 # or ten runs in a row, saved to benchmarks/race_test_runs.txt
 python main.py race 10
-
-# 4,000 orders at once through a 100-connection pool, saved to benchmarks/load_test_results.txt
-python main.py load
-
-# the test suite in tests/
-python main.py test
 ```
-
-**Tests.** `tests/` holds 39 pytest tests:
-- **`test_main.py`:** `.env` creation and reading, and the checksum check catching a changed or missing file. These need no database.
-- **`test_place_order.py`:** sales, refusals, the audit row for each sale, and 20 buyers racing for 5 units.
-- **`test_stock_and_rules.py`:** the stock routine, the audit trigger, and every rule that blocks bad data (negative stock, bad status, unknown customer, impossible quantity, category loops, required columns).
-- **`test_reports.py`:** the report against the raw tables, the 12 months, running totals, the top 100, the rollup (including a new subcategory appearing on its own), the drift check, and the cleanup results.
-
-Database tests run inside a transaction that's rolled back, so they change nothing, and they're skipped if the database isn't running. To run a few: `python main.py test -k place_order`.
 
 Docker Desktop has to be running. `psql` runs inside the container, so you don't need it installed. `main.py` uses the `.venv` Python for the race test automatically, so there's nothing to activate. The same commands work on Windows, macOS and Linux.
 

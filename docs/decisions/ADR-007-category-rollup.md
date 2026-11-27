@@ -11,7 +11,7 @@ Categories nest three or four levels deep and marketing keeps adding more. Depth
 ## Decision
 
 - A recursive query walks from each category to all its descendants, at any depth. A product counts towards its own category and every one above it.
-- One category per product and one parent per category means each product appears once under each ancestor: no double counting. `sql/12_self_checks.sql` verifies this on every build.
+- One category per product and one parent per category means each product appears once under each ancestor: no double counting. `sql/11_self_checks.sql` verifies this on every build.
 - A `CYCLE` guard stops the walk if a loop ever gets in, and a trigger refuses any change that would create one.
 - Products with no category show as "Uncategorised".
 - "Low" means at or below the product's reorder level (ADR-009). "Out of stock" is shown separately.
