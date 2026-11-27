@@ -6,7 +6,7 @@
 
 ## What I built
 
-**Overselling is fixed.** Stock is now checked and taken in one step, so two customers can't both get the last unit: one gets it, the other is told "out of stock" at once. It passed the official test ten times in a row, including 400 customers chasing 50 units. On my laptop all 400 were answered within 6 to 8 seconds, which keeps up with marketing's 400 in 10 seconds. Triggers alone would have stopped stock going below zero, but the second customer would have seen an error rather than "out of stock".
+**Overselling is fixed.** Stock is now checked and taken in one step, so two customers can't both get the last unit: one gets it, the other is told "out of stock" at once. It passed the official test ten times in a row, including 400 customers chasing 50 units. On my laptop all 400 were answered within 3 to 5 seconds, which keeps up with marketing's 400 in 10 seconds. Triggers alone would have stopped stock going below zero, but the second customer would have seen an error rather than "out of stock".
 
 **Adwoa's report takes 6 seconds, not 40 minutes.** It covers every customer: total spent, order count, each of the last 12 months, a running total and the top 100. It shows figures as of its last rebuild, so she rebuilds it on Monday morning (one click, 6 seconds).
 

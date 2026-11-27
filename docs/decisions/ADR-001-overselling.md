@@ -48,7 +48,7 @@ No. A trigger could refuse a write that takes stock below zero, as the `CHECK` d
 
 ## What it survives
 
-- **The flash sale.** Only the 50 winners write anything, and each holds the row until its order is on disk. On this laptop (disk writes take 50–380 ms) the 400-buyer test took 5–9 s, once 13 s, which keeps up with 400 in 10 seconds. On a normal server SSD it should take well under a second. That's an estimate; I haven't measured it there.
+- **The flash sale.** Only the 50 winners write anything, and each holds the row until its order is on disk. On this laptop (disk writes take 50–380 ms) the 400-buyer test took 3.1–4.7 s over 10 runs, which keeps up with 400 in 10 seconds. On a normal server SSD it should take well under a second. That's an estimate; I haven't measured it there.
 - **Many products at once.** Locks are per product.
 - **Not covered:** multi-product baskets. The contract is one product per order. A basket version should lock products in id order to avoid deadlocks.
 

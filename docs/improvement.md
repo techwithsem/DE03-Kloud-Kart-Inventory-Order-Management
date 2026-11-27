@@ -33,7 +33,7 @@ A product's stock should equal the sum of its logged movements. That holds for 3
 
 ## Shown working
 
-[stock_drift_check_demo.sql](../benchmarks/stock_drift_check_demo.sql) runs inside a transaction that's rolled back, so it changes nothing. Output: [stock_drift_check_demo_output.txt](../benchmarks/stock_drift_check_demo_output.txt).
+[stock_drift_check.sql](../benchmarks/stock_drift_check.sql) runs inside a transaction that's rolled back, so it changes nothing. Output: [stock_drift_check_output.txt](../benchmarks/stock_drift_check_output.txt).
 
 1. The first check lists all 94 products.
 2. A hand-typed stock change is caught and logged by the audit trigger.

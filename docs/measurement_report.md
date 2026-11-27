@@ -52,11 +52,11 @@ The full live rollup takes **15–26 ms** ([09_category_rollup.sql](../sql/09_ca
 | 10 complete runs in a row | **10 passed** ([race_test_10_runs.txt](../benchmarks/race_test_10_runs.txt)) |
 | Two buyers, one unit (25 rounds per run) | 250/250: one winner, one "out of stock", stock 0 |
 | Flash sale: 400 buyers, 50 units | 50 sold, 350 refused, 0 errors, every run |
-| Flash sale wall clock, incl. opening 400 connections | 5.4–8.5 s over the final 10 runs (once 13 s) |
+| Flash sale wall clock, incl. opening 400 connections | 3.1–4.7 s over the final 10 runs |
 | 10 requested, 3 in stock | Refused, stock still 3 |
 | Audit trail: 12 buyers, 5 units | All 5 sales logged |
 
-**Why about 6 s here.** Only one checkout at a time can take stock from a product, and each holds its turn until its order is safely on disk. On this laptop that disk write takes 50–380 ms; with the wait switched off (test only) a call takes 5 ms. Losers write nothing, so the queue is roughly 50 winners × the disk write. On a normal server SSD (about 1 ms per write) it should clear in well under a second. **That figure is an estimate, not measured.** I kept the safe setting, because switching the wait off could lose confirmed orders in a power cut.
+**Why about 4 s here.** Only one checkout at a time can take stock from a product, and each holds its turn until its order is safely on disk. On this laptop that disk write takes 50–380 ms; with the wait switched off (test only) a call takes 5 ms. Losers write nothing, so the queue is roughly 50 winners × the disk write. On a normal server SSD (about 1 ms per write) it should clear in well under a second. **That figure is an estimate, not measured.** I kept the safe setting, because switching the wait off could lose confirmed orders in a power cut.
 
 ## 4. Morning stock drift check
 
