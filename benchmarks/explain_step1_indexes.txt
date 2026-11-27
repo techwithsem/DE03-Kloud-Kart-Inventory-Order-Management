@@ -1,0 +1,1791 @@
+-- step 1: same naive report, only change: two indexes (orders by customer+date, order_items by order)
+-- 200 customers
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=72840.82..72841.32 rows=200 width=468) (actual rows=200.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 46kB
+   Buffers: shared hit=16184 read=404
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..71893.18 rows=200 width=441) (actual rows=200.00 loops=1)
+           Buffers: shared hit=16181 read=404
+           ->  Limit  (cost=0.29..8.12 rows=200 width=121) (actual rows=200.00 loops=1)
+                 Buffers: shared hit=5
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.20 rows=40420 width=121) (actual rows=200.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=5
+           SubPlan 1
+             ->  Aggregate  (cost=39.85..39.86 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=3947 read=404
+                   ->  Nested Loop  (cost=8.92..39.84 rows=2 width=11) (actual rows=6.15 loops=200)
+                         Buffers: shared hit=3947 read=404
+                         ->  Bitmap Heap Scan on orders o  (cost=4.47..23.66 rows=1 width=4) (actual rows=2.94 loops=200)
+                               Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 1
+                               Heap Blocks: exact=753
+                               Buffers: shared hit=1349 read=5
+                               ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.77 loops=200)
+                                     Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                                     Index Searches: 200
+                                     Buffers: shared hit=596 read=5
+                         ->  Bitmap Heap Scan on order_items oi  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=589)
+                               Recheck Cond: (o.order_id = order_id)
+                               Heap Blocks: exact=1230
+                               Buffers: shared hit=2598 read=399
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=589)
+                                     Index Cond: (order_id = o.order_id)
+                                     Index Searches: 589
+                                     Buffers: shared hit=1368 read=399
+           SubPlan 2
+             ->  Aggregate  (cost=23.66..23.67 rows=1 width=8) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=1354
+                   ->  Bitmap Heap Scan on orders o_1  (cost=4.47..23.66 rows=1 width=0) (actual rows=2.94 loops=200)
+                         Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                         Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                         Rows Removed by Filter: 1
+                         Heap Blocks: exact=753
+                         Buffers: shared hit=1354
+                         ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.77 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Index Searches: 200
+                               Buffers: shared hit=601
+           SubPlan 3
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=661
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.13 loops=200)
+                         Buffers: shared hit=661
+                         ->  Index Scan using orders_customer_date_idx on orders o_2  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.04 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Index Searches: 200
+                               Buffers: shared hit=611
+                         ->  Bitmap Heap Scan on order_items oi_1  (cost=4.45..16.15 rows=3 width=15) (actual rows=3.25 loops=8)
+                               Recheck Cond: (o_2.order_id = order_id)
+                               Heap Blocks: exact=26
+                               Buffers: shared hit=50
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=3.25 loops=8)
+                                     Index Cond: (order_id = o_2.order_id)
+                                     Index Searches: 8
+                                     Buffers: shared hit=24
+           SubPlan 4
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=672
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.12 loops=200)
+                         Buffers: shared hit=672
+                         ->  Index Scan using orders_customer_date_idx on orders o_3  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.06 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=615
+                         ->  Bitmap Heap Scan on order_items oi_2  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.18 loops=11)
+                               Recheck Cond: (o_3.order_id = order_id)
+                               Heap Blocks: exact=24
+                               Buffers: shared hit=57
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.18 loops=11)
+                                     Index Cond: (order_id = o_3.order_id)
+                                     Index Searches: 11
+                                     Buffers: shared hit=33
+           SubPlan 5
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=709
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.18 loops=200)
+                         Buffers: shared hit=709
+                         ->  Index Scan using orders_customer_date_idx on orders o_4  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.09 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=622
+                         ->  Bitmap Heap Scan on order_items oi_3  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.12 loops=17)
+                               Recheck Cond: (o_4.order_id = order_id)
+                               Heap Blocks: exact=36
+                               Buffers: shared hit=87
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.12 loops=17)
+                                     Index Cond: (order_id = o_4.order_id)
+                                     Index Searches: 17
+                                     Buffers: shared hit=51
+           SubPlan 6
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=711
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.15 loops=200)
+                         Buffers: shared hit=711
+                         ->  Index Scan using orders_customer_date_idx on orders o_5  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.10 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=624
+                         ->  Bitmap Heap Scan on order_items oi_4  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.58 loops=19)
+                               Recheck Cond: (o_5.order_id = order_id)
+                               Heap Blocks: exact=30
+                               Buffers: shared hit=87
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.58 loops=19)
+                                     Index Cond: (order_id = o_5.order_id)
+                                     Index Searches: 19
+                                     Buffers: shared hit=57
+           SubPlan 7
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=740
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.24 loops=200)
+                         Buffers: shared hit=740
+                         ->  Index Scan using orders_customer_date_idx on orders o_6  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.10 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=629
+                         ->  Bitmap Heap Scan on order_items oi_5  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.29 loops=21)
+                               Recheck Cond: (o_6.order_id = order_id)
+                               Heap Blocks: exact=48
+                               Buffers: shared hit=111
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.29 loops=21)
+                                     Index Cond: (order_id = o_6.order_id)
+                                     Index Searches: 21
+                                     Buffers: shared hit=63
+           SubPlan 8
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=832
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.34 loops=200)
+                         Buffers: shared hit=832
+                         ->  Index Scan using orders_customer_date_idx on orders o_7  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.20 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=643
+                         ->  Bitmap Heap Scan on order_items oi_6  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.73 loops=40)
+                               Recheck Cond: (o_7.order_id = order_id)
+                               Heap Blocks: exact=69
+                               Buffers: shared hit=189
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.73 loops=40)
+                                     Index Cond: (order_id = o_7.order_id)
+                                     Index Searches: 40
+                                     Buffers: shared hit=120
+           SubPlan 9
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=850
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.44 loops=200)
+                         Buffers: shared hit=850
+                         ->  Index Scan using orders_customer_date_idx on orders o_8  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.19 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=648
+                         ->  Bitmap Heap Scan on order_items oi_7  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.32 loops=38)
+                               Recheck Cond: (o_8.order_id = order_id)
+                               Heap Blocks: exact=88
+                               Buffers: shared hit=202
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.32 loops=38)
+                                     Index Cond: (order_id = o_8.order_id)
+                                     Index Searches: 38
+                                     Buffers: shared hit=114
+           SubPlan 10
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=853
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.36 loops=200)
+                         Buffers: shared hit=853
+                         ->  Index Scan using orders_customer_date_idx on orders o_9  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.20 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=657
+                         ->  Bitmap Heap Scan on order_items oi_8  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.78 loops=41)
+                               Recheck Cond: (o_9.order_id = order_id)
+                               Heap Blocks: exact=73
+                               Buffers: shared hit=196
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.78 loops=41)
+                                     Index Cond: (order_id = o_9.order_id)
+                                     Index Searches: 41
+                                     Buffers: shared hit=123
+           SubPlan 11
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=967
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.60 loops=200)
+                         Buffers: shared hit=967
+                         ->  Index Scan using orders_customer_date_idx on orders o_10  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.28 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=676
+                         ->  Bitmap Heap Scan on order_items oi_9  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=57)
+                               Recheck Cond: (o_10.order_id = order_id)
+                               Heap Blocks: exact=120
+                               Buffers: shared hit=291
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=57)
+                                     Index Cond: (order_id = o_10.order_id)
+                                     Index Searches: 57
+                                     Buffers: shared hit=171
+           SubPlan 12
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=1105
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.76 loops=200)
+                         Buffers: shared hit=1105
+                         ->  Index Scan using orders_customer_date_idx on orders o_11  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.41 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=707
+                         ->  Bitmap Heap Scan on order_items oi_10  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.85 loops=82)
+                               Recheck Cond: (o_11.order_id = order_id)
+                               Heap Blocks: exact=152
+                               Buffers: shared hit=398
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.85 loops=82)
+                                     Index Cond: (order_id = o_11.order_id)
+                                     Index Searches: 82
+                                     Buffers: shared hit=246
+           SubPlan 13
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=1225
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.10 loops=200)
+                         Buffers: shared hit=1225
+                         ->  Index Scan using orders_customer_date_idx on orders o_12  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.47 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=723
+                         ->  Bitmap Heap Scan on order_items oi_11  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.34 loops=94)
+                               Recheck Cond: (o_12.order_id = order_id)
+                               Heap Blocks: exact=220
+                               Buffers: shared hit=502
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.34 loops=94)
+                                     Index Cond: (order_id = o_12.order_id)
+                                     Index Searches: 94
+                                     Buffers: shared hit=282
+           SubPlan 14
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=200)
+                   Buffers: shared hit=1550
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.57 loops=200)
+                         Buffers: shared hit=1550
+                         ->  Index Scan using orders_customer_date_idx on orders o_13  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.74 loops=200)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 200
+                               Buffers: shared hit=788
+                         ->  Bitmap Heap Scan on order_items oi_12  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=149)
+                               Recheck Cond: (o_13.order_id = order_id)
+                               Heap Blocks: exact=315
+                               Buffers: shared hit=762
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=149)
+                                     Index Cond: (order_id = o_13.order_id)
+                                     Index Searches: 149
+                                     Buffers: shared hit=447
+   ->  CTE Scan on report r  (cost=0.00..940.00 rows=200 width=468) (actual rows=200.00 loops=1)
+         Storage: Memory  Maximum Storage: 38kB
+         Buffers: shared hit=16181 read=404
+         SubPlan 16
+           ->  Aggregate  (cost=4.67..4.68 rows=1 width=8) (actual rows=1.00 loops=200)
+                 Buffers: shared hit=16091 read=396
+                 ->  CTE Scan on report r2  (cost=0.00..4.50 rows=67 width=0) (actual rows=99.22 loops=200)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 101
+                       Storage: Memory  Maximum Storage: 38kB
+                       Buffers: shared hit=16091 read=396
+ Planning:
+   Buffers: shared hit=473 read=7
+ Planning Time: 9.159 ms
+ Execution Time: 113.389 ms
+(290 rows)
+
+-- 2000 customers
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=812438.81..812443.81 rows=2000 width=468) (actual rows=2000.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 261kB
+   Buffers: shared hit=168691 read=321
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..718929.15 rows=2000 width=441) (actual rows=2000.00 loops=1)
+           Buffers: shared hit=168688 read=321
+           ->  Limit  (cost=0.29..78.61 rows=2000 width=121) (actual rows=2000.00 loops=1)
+                 Buffers: shared hit=33
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.20 rows=40420 width=121) (actual rows=2000.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=33
+           SubPlan 1
+             ->  Aggregate  (cost=39.85..39.86 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=44503 read=321
+                   ->  Nested Loop  (cost=8.92..39.84 rows=2 width=11) (actual rows=6.38 loops=2000)
+                         Buffers: shared hit=44503 read=321
+                         ->  Bitmap Heap Scan on orders o  (cost=4.47..23.66 rows=1 width=4) (actual rows=3.04 loops=2000)
+                               Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 1
+                               Heap Blocks: exact=7801
+                               Buffers: shared hit=13794 read=27
+                               ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.91 loops=2000)
+                                     Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                                     Index Searches: 2000
+                                     Buffers: shared hit=5993 read=27
+                         ->  Bitmap Heap Scan on order_items oi  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=6083)
+                               Recheck Cond: (o.order_id = order_id)
+                               Heap Blocks: exact=12754
+                               Buffers: shared hit=30709 read=294
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=6083)
+                                     Index Cond: (order_id = o.order_id)
+                                     Index Searches: 6083
+                                     Buffers: shared hit=17955 read=294
+           SubPlan 2
+             ->  Aggregate  (cost=23.66..23.67 rows=1 width=8) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=13821
+                   ->  Bitmap Heap Scan on orders o_1  (cost=4.47..23.66 rows=1 width=0) (actual rows=3.04 loops=2000)
+                         Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                         Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                         Rows Removed by Filter: 1
+                         Heap Blocks: exact=7801
+                         Buffers: shared hit=13821
+                         ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.91 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Index Searches: 2000
+                               Buffers: shared hit=6020
+           SubPlan 3
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=6772
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.14 loops=2000)
+                         Buffers: shared hit=6772
+                         ->  Index Scan using orders_customer_date_idx on orders o_2  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.06 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6147
+                         ->  Bitmap Heap Scan on order_items oi_1  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.34 loops=117)
+                               Recheck Cond: (o_2.order_id = order_id)
+                               Heap Blocks: exact=274
+                               Buffers: shared hit=625
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.34 loops=117)
+                                     Index Cond: (order_id = o_2.order_id)
+                                     Index Searches: 117
+                                     Buffers: shared hit=351
+           SubPlan 4
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=6878
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.15 loops=2000)
+                         Buffers: shared hit=6878
+                         ->  Index Scan using orders_customer_date_idx on orders o_3  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.07 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6176
+                         ->  Bitmap Heap Scan on order_items oi_2  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.16 loops=136)
+                               Recheck Cond: (o_3.order_id = order_id)
+                               Heap Blocks: exact=294
+                               Buffers: shared hit=702
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.16 loops=136)
+                                     Index Cond: (order_id = o_3.order_id)
+                                     Index Searches: 136
+                                     Buffers: shared hit=408
+           SubPlan 5
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=7038
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.17 loops=2000)
+                         Buffers: shared hit=7038
+                         ->  Index Scan using orders_customer_date_idx on orders o_4  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.08 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6216
+                         ->  Bitmap Heap Scan on order_items oi_3  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.07 loops=162)
+                               Recheck Cond: (o_4.order_id = order_id)
+                               Heap Blocks: exact=336
+                               Buffers: shared hit=822
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.07 loops=162)
+                                     Index Cond: (order_id = o_4.order_id)
+                                     Index Searches: 162
+                                     Buffers: shared hit=486
+           SubPlan 6
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=7236
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.19 loops=2000)
+                         Buffers: shared hit=7236
+                         ->  Index Scan using orders_customer_date_idx on orders o_5  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.10 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6261
+                         ->  Bitmap Heap Scan on order_items oi_4  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.92 loops=198)
+                               Recheck Cond: (o_5.order_id = order_id)
+                               Heap Blocks: exact=381
+                               Buffers: shared hit=975
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.92 loops=198)
+                                     Index Cond: (order_id = o_5.order_id)
+                                     Index Searches: 198
+                                     Buffers: shared hit=594
+           SubPlan 7
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=7597
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.25 loops=2000)
+                         Buffers: shared hit=7597
+                         ->  Index Scan using orders_customer_date_idx on orders o_6  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.13 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6336
+                         ->  Bitmap Heap Scan on order_items oi_5  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.98 loops=253)
+                               Recheck Cond: (o_6.order_id = order_id)
+                               Heap Blocks: exact=502
+                               Buffers: shared hit=1261
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.98 loops=253)
+                                     Index Cond: (order_id = o_6.order_id)
+                                     Index Searches: 253
+                                     Buffers: shared hit=759
+           SubPlan 8
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=8095
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.33 loops=2000)
+                         Buffers: shared hit=8095
+                         ->  Index Scan using orders_customer_date_idx on orders o_7  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.17 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6421
+                         ->  Bitmap Heap Scan on order_items oi_6  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.97 loops=337)
+                               Recheck Cond: (o_7.order_id = order_id)
+                               Heap Blocks: exact=663
+                               Buffers: shared hit=1674
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.97 loops=337)
+                                     Index Cond: (order_id = o_7.order_id)
+                                     Index Searches: 337
+                                     Buffers: shared hit=1011
+           SubPlan 9
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=8408
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.40 loops=2000)
+                         Buffers: shared hit=8408
+                         ->  Index Scan using orders_customer_date_idx on orders o_8  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.19 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6480
+                         ->  Bitmap Heap Scan on order_items oi_7  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.08 loops=380)
+                               Recheck Cond: (o_8.order_id = order_id)
+                               Heap Blocks: exact=788
+                               Buffers: shared hit=1928
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.08 loops=380)
+                                     Index Cond: (order_id = o_8.order_id)
+                                     Index Searches: 380
+                                     Buffers: shared hit=1140
+           SubPlan 10
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=9500
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.57 loops=2000)
+                         Buffers: shared hit=9500
+                         ->  Index Scan using orders_customer_date_idx on orders o_9  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.28 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6711
+                         ->  Bitmap Heap Scan on order_items oi_8  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.07 loops=550)
+                               Recheck Cond: (o_9.order_id = order_id)
+                               Heap Blocks: exact=1139
+                               Buffers: shared hit=2789
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.07 loops=550)
+                                     Index Cond: (order_id = o_9.order_id)
+                                     Index Searches: 550
+                                     Buffers: shared hit=1650
+           SubPlan 11
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=10248
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.71 loops=2000)
+                         Buffers: shared hit=10248
+                         ->  Index Scan using orders_customer_date_idx on orders o_10  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.33 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6847
+                         ->  Bitmap Heap Scan on order_items oi_9  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.13 loops=663)
+                               Recheck Cond: (o_10.order_id = order_id)
+                               Heap Blocks: exact=1412
+                               Buffers: shared hit=3401
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.13 loops=663)
+                                     Index Cond: (order_id = o_10.order_id)
+                                     Index Searches: 663
+                                     Buffers: shared hit=1989
+           SubPlan 12
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=11510
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.91 loops=2000)
+                         Buffers: shared hit=11510
+                         ->  Index Scan using orders_customer_date_idx on orders o_11  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.43 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=7093
+                         ->  Bitmap Heap Scan on order_items oi_10  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.08 loops=869)
+                               Recheck Cond: (o_11.order_id = order_id)
+                               Heap Blocks: exact=1810
+                               Buffers: shared hit=4417
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.08 loops=869)
+                                     Index Cond: (order_id = o_11.order_id)
+                                     Index Searches: 869
+                                     Buffers: shared hit=2607
+           SubPlan 13
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=12108
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.00 loops=2000)
+                         Buffers: shared hit=12108
+                         ->  Index Scan using orders_customer_date_idx on orders o_12  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.48 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=7254
+                         ->  Bitmap Heap Scan on order_items oi_11  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.08 loops=955)
+                               Recheck Cond: (o_12.order_id = order_id)
+                               Heap Blocks: exact=1989
+                               Buffers: shared hit=4854
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.08 loops=955)
+                                     Index Cond: (order_id = o_12.order_id)
+                                     Index Searches: 955
+                                     Buffers: shared hit=2865
+           SubPlan 14
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=14941
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.50 loops=2000)
+                         Buffers: shared hit=14941
+                         ->  Index Scan using orders_customer_date_idx on orders o_13  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.69 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=7791
+                         ->  Bitmap Heap Scan on order_items oi_12  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.16 loops=1385)
+                               Recheck Cond: (o_13.order_id = order_id)
+                               Heap Blocks: exact=2995
+                               Buffers: shared hit=7150
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.16 loops=1385)
+                                     Index Cond: (order_id = o_13.order_id)
+                                     Index Searches: 1385
+                                     Buffers: shared hit=4155
+   ->  CTE Scan on report r  (cost=0.00..93400.00 rows=2000 width=468) (actual rows=2000.00 loops=1)
+         Storage: Memory  Maximum Storage: 229kB
+         Buffers: shared hit=168688 read=321
+         SubPlan 16
+           ->  Aggregate  (cost=46.67..46.68 rows=1 width=8) (actual rows=1.00 loops=2000)
+                 Buffers: shared hit=168590 read=321
+                 ->  CTE Scan on report r2  (cost=0.00..45.00 rows=667 width=0) (actual rows=997.96 loops=2000)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 1002
+                       Storage: Memory  Maximum Storage: 229kB
+                       Buffers: shared hit=168590 read=321
+ Planning:
+   Buffers: shared hit=485
+ Planning Time: 12.768 ms
+ JIT:
+   Functions: 174
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+ Execution Time: 6335.257 ms
+(294 rows)
+
+-- step 1 continued: 5000 customers, same two indexes
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=2381129.64..2381142.14 rows=5000 width=468) (actual rows=5000.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 723kB
+   Buffers: shared hit=422702
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..1797322.45 rows=5000 width=441) (actual rows=5000.00 loops=1)
+           Buffers: shared hit=422699
+           ->  Limit  (cost=0.29..196.10 rows=5000 width=121) (actual rows=5000.00 loops=1)
+                 Buffers: shared hit=80
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.20 rows=40420 width=121) (actual rows=5000.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=80
+           SubPlan 1
+             ->  Aggregate  (cost=39.85..39.86 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=112163
+                   ->  Nested Loop  (cost=8.92..39.84 rows=2 width=11) (actual rows=6.39 loops=5000)
+                         Buffers: shared hit=112163
+                         ->  Bitmap Heap Scan on orders o  (cost=4.47..23.66 rows=1 width=4) (actual rows=3.04 loops=5000)
+                               Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 1
+                               Heap Blocks: exact=19549
+                               Buffers: shared hit=34604
+                               ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.92 loops=5000)
+                                     Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                                     Index Searches: 5000
+                                     Buffers: shared hit=15055
+                         ->  Bitmap Heap Scan on order_items oi  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=15212)
+                               Recheck Cond: (o.order_id = order_id)
+                               Heap Blocks: exact=31923
+                               Buffers: shared hit=77559
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=15212)
+                                     Index Cond: (order_id = o.order_id)
+                                     Index Searches: 15212
+                                     Buffers: shared hit=45636
+           SubPlan 2
+             ->  Aggregate  (cost=23.66..23.67 rows=1 width=8) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=34604
+                   ->  Bitmap Heap Scan on orders o_1  (cost=4.47..23.66 rows=1 width=0) (actual rows=3.04 loops=5000)
+                         Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                         Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                         Rows Removed by Filter: 1
+                         Heap Blocks: exact=19549
+                         Buffers: shared hit=34604
+                         ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.92 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Index Searches: 5000
+                               Buffers: shared hit=15055
+           SubPlan 3
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=16743
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.12 loops=5000)
+                         Buffers: shared hit=16743
+                         ->  Index Scan using orders_customer_date_idx on orders o_2  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.05 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=15337
+                         ->  Bitmap Heap Scan on order_items oi_1  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.25 loops=268)
+                               Recheck Cond: (o_2.order_id = order_id)
+                               Heap Blocks: exact=602
+                               Buffers: shared hit=1406
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.25 loops=268)
+                                     Index Cond: (order_id = o_2.order_id)
+                                     Index Searches: 268
+                                     Buffers: shared hit=804
+           SubPlan 4
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=17163
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.14 loops=5000)
+                         Buffers: shared hit=17163
+                         ->  Index Scan using orders_customer_date_idx on orders o_3  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.07 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=15428
+                         ->  Bitmap Heap Scan on order_items oi_2  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.07 loops=342)
+                               Recheck Cond: (o_3.order_id = order_id)
+                               Heap Blocks: exact=709
+                               Buffers: shared hit=1735
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.07 loops=342)
+                                     Index Cond: (order_id = o_3.order_id)
+                                     Index Searches: 342
+                                     Buffers: shared hit=1026
+           SubPlan 5
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=17730
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.18 loops=5000)
+                         Buffers: shared hit=17730
+                         ->  Index Scan using orders_customer_date_idx on orders o_4  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.09 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=15544
+                         ->  Bitmap Heap Scan on order_items oi_3  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=428)
+                               Recheck Cond: (o_4.order_id = order_id)
+                               Heap Blocks: exact=902
+                               Buffers: shared hit=2186
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=428)
+                                     Index Cond: (order_id = o_4.order_id)
+                                     Index Searches: 428
+                                     Buffers: shared hit=1284
+           SubPlan 6
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=18269
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.21 loops=5000)
+                         Buffers: shared hit=18269
+                         ->  Index Scan using orders_customer_date_idx on orders o_5  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.10 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=15684
+                         ->  Bitmap Heap Scan on order_items oi_4  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.99 loops=518)
+                               Recheck Cond: (o_5.order_id = order_id)
+                               Heap Blocks: exact=1031
+                               Buffers: shared hit=2585
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.99 loops=518)
+                                     Index Cond: (order_id = o_5.order_id)
+                                     Index Searches: 518
+                                     Buffers: shared hit=1554
+           SubPlan 7
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=19380
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.28 loops=5000)
+                         Buffers: shared hit=19380
+                         ->  Index Scan using orders_customer_date_idx on orders o_6  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.14 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=15895
+                         ->  Bitmap Heap Scan on order_items oi_5  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.07 loops=688)
+                               Recheck Cond: (o_6.order_id = order_id)
+                               Heap Blocks: exact=1421
+                               Buffers: shared hit=3485
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.07 loops=688)
+                                     Index Cond: (order_id = o_6.order_id)
+                                     Index Searches: 688
+                                     Buffers: shared hit=2064
+           SubPlan 8
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=19726
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.31 loops=5000)
+                         Buffers: shared hit=19726
+                         ->  Index Scan using orders_customer_date_idx on orders o_7  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.15 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=15940
+                         ->  Bitmap Heap Scan on order_items oi_6  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.06 loops=748)
+                               Recheck Cond: (o_7.order_id = order_id)
+                               Heap Blocks: exact=1542
+                               Buffers: shared hit=3786
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.06 loops=748)
+                                     Index Cond: (order_id = o_7.order_id)
+                                     Index Searches: 748
+                                     Buffers: shared hit=2244
+           SubPlan 9
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=21324
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.42 loops=5000)
+                         Buffers: shared hit=21324
+                         ->  Index Scan using orders_customer_date_idx on orders o_8  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.20 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=16236
+                         ->  Bitmap Heap Scan on order_items oi_7  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=996)
+                               Recheck Cond: (o_8.order_id = order_id)
+                               Heap Blocks: exact=2100
+                               Buffers: shared hit=5088
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=996)
+                                     Index Cond: (order_id = o_8.order_id)
+                                     Index Searches: 996
+                                     Buffers: shared hit=2988
+           SubPlan 10
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=23571
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.56 loops=5000)
+                         Buffers: shared hit=23571
+                         ->  Index Scan using orders_customer_date_idx on orders o_9  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.27 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=16733
+                         ->  Bitmap Heap Scan on order_items oi_8  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=1341)
+                               Recheck Cond: (o_9.order_id = order_id)
+                               Heap Blocks: exact=2815
+                               Buffers: shared hit=6838
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=1341)
+                                     Index Cond: (order_id = o_9.order_id)
+                                     Index Searches: 1341
+                                     Buffers: shared hit=4023
+           SubPlan 11
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=25324
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.68 loops=5000)
+                         Buffers: shared hit=25324
+                         ->  Index Scan using orders_customer_date_idx on orders o_10  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.32 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=17108
+                         ->  Bitmap Heap Scan on order_items oi_9  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.12 loops=1605)
+                               Recheck Cond: (o_10.order_id = order_id)
+                               Heap Blocks: exact=3401
+                               Buffers: shared hit=8216
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.12 loops=1605)
+                                     Index Cond: (order_id = o_10.order_id)
+                                     Index Searches: 1605
+                                     Buffers: shared hit=4815
+           SubPlan 12
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=28585
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.89 loops=5000)
+                         Buffers: shared hit=28585
+                         ->  Index Scan using orders_customer_date_idx on orders o_11  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.43 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=17728
+                         ->  Bitmap Heap Scan on order_items oi_10  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=2135)
+                               Recheck Cond: (o_11.order_id = order_id)
+                               Heap Blocks: exact=4452
+                               Buffers: shared hit=10857
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=2135)
+                                     Index Cond: (order_id = o_11.order_id)
+                                     Index Searches: 2135
+                                     Buffers: shared hit=6405
+           SubPlan 13
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=30964
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.05 loops=5000)
+                         Buffers: shared hit=30964
+                         ->  Index Scan using orders_customer_date_idx on orders o_12  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.50 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=18253
+                         ->  Bitmap Heap Scan on order_items oi_11  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=2491)
+                               Recheck Cond: (o_12.order_id = order_id)
+                               Heap Blocks: exact=5238
+                               Buffers: shared hit=12711
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=2491)
+                                     Index Cond: (order_id = o_12.order_id)
+                                     Index Searches: 2491
+                                     Buffers: shared hit=7473
+           SubPlan 14
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=5000)
+                   Buffers: shared hit=37073
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.45 loops=5000)
+                         Buffers: shared hit=37073
+                         ->  Index Scan using orders_customer_date_idx on orders o_13  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.69 loops=5000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 5000
+                               Buffers: shared hit=19467
+                         ->  Bitmap Heap Scan on order_items oi_12  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=3446)
+                               Recheck Cond: (o_13.order_id = order_id)
+                               Heap Blocks: exact=7268
+                               Buffers: shared hit=17606
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=3446)
+                                     Index Cond: (order_id = o_13.order_id)
+                                     Index Searches: 3446
+                                     Buffers: shared hit=10338
+   ->  CTE Scan on report r  (cost=0.00..583500.00 rows=5000 width=468) (actual rows=5000.00 loops=1)
+         Storage: Memory  Maximum Storage: 595kB
+         Buffers: shared hit=422699
+         SubPlan 16
+           ->  Aggregate  (cost=116.67..116.68 rows=1 width=8) (actual rows=1.00 loops=5000)
+                 Buffers: shared hit=422601
+                 ->  CTE Scan on report r2  (cost=0.00..112.50 rows=1667 width=0) (actual rows=2493.76 loops=5000)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 2506
+                       Storage: Memory  Maximum Storage: 595kB
+                       Buffers: shared hit=422601
+ Planning:
+   Buffers: shared hit=485
+ Planning Time: 6.323 ms
+ JIT:
+   Functions: 174
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+ Execution Time: 9732.593 ms
+(294 rows)
+
+-- step 1 continued: 2000 customers, same two indexes
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=812438.81..812443.81 rows=2000 width=468) (actual rows=2000.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 261kB
+   Buffers: shared hit=169012
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..718929.15 rows=2000 width=441) (actual rows=2000.00 loops=1)
+           Buffers: shared hit=169009
+           ->  Limit  (cost=0.29..78.61 rows=2000 width=121) (actual rows=2000.00 loops=1)
+                 Buffers: shared hit=33
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.20 rows=40420 width=121) (actual rows=2000.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=33
+           SubPlan 1
+             ->  Aggregate  (cost=39.85..39.86 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=44824
+                   ->  Nested Loop  (cost=8.92..39.84 rows=2 width=11) (actual rows=6.38 loops=2000)
+                         Buffers: shared hit=44824
+                         ->  Bitmap Heap Scan on orders o  (cost=4.47..23.66 rows=1 width=4) (actual rows=3.04 loops=2000)
+                               Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 1
+                               Heap Blocks: exact=7801
+                               Buffers: shared hit=13821
+                               ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.91 loops=2000)
+                                     Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                                     Index Searches: 2000
+                                     Buffers: shared hit=6020
+                         ->  Bitmap Heap Scan on order_items oi  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=6083)
+                               Recheck Cond: (o.order_id = order_id)
+                               Heap Blocks: exact=12754
+                               Buffers: shared hit=31003
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=6083)
+                                     Index Cond: (order_id = o.order_id)
+                                     Index Searches: 6083
+                                     Buffers: shared hit=18249
+           SubPlan 2
+             ->  Aggregate  (cost=23.66..23.67 rows=1 width=8) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=13821
+                   ->  Bitmap Heap Scan on orders o_1  (cost=4.47..23.66 rows=1 width=0) (actual rows=3.04 loops=2000)
+                         Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                         Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                         Rows Removed by Filter: 1
+                         Heap Blocks: exact=7801
+                         Buffers: shared hit=13821
+                         ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.91 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Index Searches: 2000
+                               Buffers: shared hit=6020
+           SubPlan 3
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=6772
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.14 loops=2000)
+                         Buffers: shared hit=6772
+                         ->  Index Scan using orders_customer_date_idx on orders o_2  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.06 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6147
+                         ->  Bitmap Heap Scan on order_items oi_1  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.34 loops=117)
+                               Recheck Cond: (o_2.order_id = order_id)
+                               Heap Blocks: exact=274
+                               Buffers: shared hit=625
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.34 loops=117)
+                                     Index Cond: (order_id = o_2.order_id)
+                                     Index Searches: 117
+                                     Buffers: shared hit=351
+           SubPlan 4
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=6878
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.15 loops=2000)
+                         Buffers: shared hit=6878
+                         ->  Index Scan using orders_customer_date_idx on orders o_3  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.07 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6176
+                         ->  Bitmap Heap Scan on order_items oi_2  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.16 loops=136)
+                               Recheck Cond: (o_3.order_id = order_id)
+                               Heap Blocks: exact=294
+                               Buffers: shared hit=702
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.16 loops=136)
+                                     Index Cond: (order_id = o_3.order_id)
+                                     Index Searches: 136
+                                     Buffers: shared hit=408
+           SubPlan 5
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=7038
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.17 loops=2000)
+                         Buffers: shared hit=7038
+                         ->  Index Scan using orders_customer_date_idx on orders o_4  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.08 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6216
+                         ->  Bitmap Heap Scan on order_items oi_3  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.07 loops=162)
+                               Recheck Cond: (o_4.order_id = order_id)
+                               Heap Blocks: exact=336
+                               Buffers: shared hit=822
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.07 loops=162)
+                                     Index Cond: (order_id = o_4.order_id)
+                                     Index Searches: 162
+                                     Buffers: shared hit=486
+           SubPlan 6
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=7236
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.19 loops=2000)
+                         Buffers: shared hit=7236
+                         ->  Index Scan using orders_customer_date_idx on orders o_5  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.10 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6261
+                         ->  Bitmap Heap Scan on order_items oi_4  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.92 loops=198)
+                               Recheck Cond: (o_5.order_id = order_id)
+                               Heap Blocks: exact=381
+                               Buffers: shared hit=975
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.92 loops=198)
+                                     Index Cond: (order_id = o_5.order_id)
+                                     Index Searches: 198
+                                     Buffers: shared hit=594
+           SubPlan 7
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=7597
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.25 loops=2000)
+                         Buffers: shared hit=7597
+                         ->  Index Scan using orders_customer_date_idx on orders o_6  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.13 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6336
+                         ->  Bitmap Heap Scan on order_items oi_5  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.98 loops=253)
+                               Recheck Cond: (o_6.order_id = order_id)
+                               Heap Blocks: exact=502
+                               Buffers: shared hit=1261
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.98 loops=253)
+                                     Index Cond: (order_id = o_6.order_id)
+                                     Index Searches: 253
+                                     Buffers: shared hit=759
+           SubPlan 8
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=8095
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.33 loops=2000)
+                         Buffers: shared hit=8095
+                         ->  Index Scan using orders_customer_date_idx on orders o_7  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.17 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6421
+                         ->  Bitmap Heap Scan on order_items oi_6  (cost=4.45..16.15 rows=3 width=15) (actual rows=1.97 loops=337)
+                               Recheck Cond: (o_7.order_id = order_id)
+                               Heap Blocks: exact=663
+                               Buffers: shared hit=1674
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=1.97 loops=337)
+                                     Index Cond: (order_id = o_7.order_id)
+                                     Index Searches: 337
+                                     Buffers: shared hit=1011
+           SubPlan 9
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=8408
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.40 loops=2000)
+                         Buffers: shared hit=8408
+                         ->  Index Scan using orders_customer_date_idx on orders o_8  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.19 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6480
+                         ->  Bitmap Heap Scan on order_items oi_7  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.08 loops=380)
+                               Recheck Cond: (o_8.order_id = order_id)
+                               Heap Blocks: exact=788
+                               Buffers: shared hit=1928
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.08 loops=380)
+                                     Index Cond: (order_id = o_8.order_id)
+                                     Index Searches: 380
+                                     Buffers: shared hit=1140
+           SubPlan 10
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=9500
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.57 loops=2000)
+                         Buffers: shared hit=9500
+                         ->  Index Scan using orders_customer_date_idx on orders o_9  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.28 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6711
+                         ->  Bitmap Heap Scan on order_items oi_8  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.07 loops=550)
+                               Recheck Cond: (o_9.order_id = order_id)
+                               Heap Blocks: exact=1139
+                               Buffers: shared hit=2789
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.07 loops=550)
+                                     Index Cond: (order_id = o_9.order_id)
+                                     Index Searches: 550
+                                     Buffers: shared hit=1650
+           SubPlan 11
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=10248
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.71 loops=2000)
+                         Buffers: shared hit=10248
+                         ->  Index Scan using orders_customer_date_idx on orders o_10  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.33 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=6847
+                         ->  Bitmap Heap Scan on order_items oi_9  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.13 loops=663)
+                               Recheck Cond: (o_10.order_id = order_id)
+                               Heap Blocks: exact=1412
+                               Buffers: shared hit=3401
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.13 loops=663)
+                                     Index Cond: (order_id = o_10.order_id)
+                                     Index Searches: 663
+                                     Buffers: shared hit=1989
+           SubPlan 12
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=11510
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.91 loops=2000)
+                         Buffers: shared hit=11510
+                         ->  Index Scan using orders_customer_date_idx on orders o_11  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.43 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=7093
+                         ->  Bitmap Heap Scan on order_items oi_10  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.08 loops=869)
+                               Recheck Cond: (o_11.order_id = order_id)
+                               Heap Blocks: exact=1810
+                               Buffers: shared hit=4417
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.08 loops=869)
+                                     Index Cond: (order_id = o_11.order_id)
+                                     Index Searches: 869
+                                     Buffers: shared hit=2607
+           SubPlan 13
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=12108
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.00 loops=2000)
+                         Buffers: shared hit=12108
+                         ->  Index Scan using orders_customer_date_idx on orders o_12  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.48 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=7254
+                         ->  Bitmap Heap Scan on order_items oi_11  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.08 loops=955)
+                               Recheck Cond: (o_12.order_id = order_id)
+                               Heap Blocks: exact=1989
+                               Buffers: shared hit=4854
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.08 loops=955)
+                                     Index Cond: (order_id = o_12.order_id)
+                                     Index Searches: 955
+                                     Buffers: shared hit=2865
+           SubPlan 14
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=2000)
+                   Buffers: shared hit=14941
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.50 loops=2000)
+                         Buffers: shared hit=14941
+                         ->  Index Scan using orders_customer_date_idx on orders o_13  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.69 loops=2000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 2000
+                               Buffers: shared hit=7791
+                         ->  Bitmap Heap Scan on order_items oi_12  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.16 loops=1385)
+                               Recheck Cond: (o_13.order_id = order_id)
+                               Heap Blocks: exact=2995
+                               Buffers: shared hit=7150
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.16 loops=1385)
+                                     Index Cond: (order_id = o_13.order_id)
+                                     Index Searches: 1385
+                                     Buffers: shared hit=4155
+   ->  CTE Scan on report r  (cost=0.00..93400.00 rows=2000 width=468) (actual rows=2000.00 loops=1)
+         Storage: Memory  Maximum Storage: 229kB
+         Buffers: shared hit=169009
+         SubPlan 16
+           ->  Aggregate  (cost=46.67..46.68 rows=1 width=8) (actual rows=1.00 loops=2000)
+                 Buffers: shared hit=168911
+                 ->  CTE Scan on report r2  (cost=0.00..45.00 rows=667 width=0) (actual rows=997.96 loops=2000)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 1002
+                       Storage: Memory  Maximum Storage: 229kB
+                       Buffers: shared hit=168911
+ Planning:
+   Buffers: shared hit=485
+ Planning Time: 7.845 ms
+ JIT:
+   Functions: 174
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+ Execution Time: 4216.859 ms
+(294 rows)
+
+-- step 1 continued: 10000 customers, same two indexes
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=5931080.00..5931105.00 rows=10000 width=468) (actual rows=10000.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 1447kB
+   Buffers: shared hit=849835
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..3594644.61 rows=10000 width=441) (actual rows=10000.00 loops=1)
+           Buffers: shared hit=849832
+           ->  Limit  (cost=0.29..391.91 rows=10000 width=121) (actual rows=10000.00 loops=1)
+                 Buffers: shared hit=159
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.20 rows=40420 width=121) (actual rows=10000.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=159
+           SubPlan 1
+             ->  Aggregate  (cost=39.85..39.86 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=226359
+                   ->  Nested Loop  (cost=8.92..39.84 rows=2 width=11) (actual rows=6.47 loops=10000)
+                         Buffers: shared hit=226359
+                         ->  Bitmap Heap Scan on orders o  (cost=4.47..23.66 rows=1 width=4) (actual rows=3.07 loops=10000)
+                               Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 1
+                               Heap Blocks: exact=39471
+                               Buffers: shared hit=69590
+                               ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.95 loops=10000)
+                                     Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                                     Index Searches: 10000
+                                     Buffers: shared hit=30119
+                         ->  Bitmap Heap Scan on order_items oi  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=30711)
+                               Recheck Cond: (o.order_id = order_id)
+                               Heap Blocks: exact=64636
+                               Buffers: shared hit=156769
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=30711)
+                                     Index Cond: (order_id = o.order_id)
+                                     Index Searches: 30711
+                                     Buffers: shared hit=92133
+           SubPlan 2
+             ->  Aggregate  (cost=23.66..23.67 rows=1 width=8) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=69590
+                   ->  Bitmap Heap Scan on orders o_1  (cost=4.47..23.66 rows=1 width=0) (actual rows=3.07 loops=10000)
+                         Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                         Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                         Rows Removed by Filter: 1
+                         Heap Blocks: exact=39471
+                         Buffers: shared hit=69590
+                         ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.95 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Index Searches: 10000
+                               Buffers: shared hit=30119
+           SubPlan 3
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=33224
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.11 loops=10000)
+                         Buffers: shared hit=33224
+                         ->  Index Scan using orders_customer_date_idx on orders o_2  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.05 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=30639
+                         ->  Bitmap Heap Scan on order_items oi_1  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.13 loops=504)
+                               Recheck Cond: (o_2.order_id = order_id)
+                               Heap Blocks: exact=1073
+                               Buffers: shared hit=2585
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.13 loops=504)
+                                     Index Cond: (order_id = o_2.order_id)
+                                     Index Searches: 504
+                                     Buffers: shared hit=1512
+           SubPlan 4
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=34366
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.14 loops=10000)
+                         Buffers: shared hit=34366
+                         ->  Index Scan using orders_customer_date_idx on orders o_3  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.07 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=30873
+                         ->  Bitmap Heap Scan on order_items oi_2  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.05 loops=691)
+                               Recheck Cond: (o_3.order_id = order_id)
+                               Heap Blocks: exact=1420
+                               Buffers: shared hit=3493
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.05 loops=691)
+                                     Index Cond: (order_id = o_3.order_id)
+                                     Index Searches: 691
+                                     Buffers: shared hit=2073
+           SubPlan 5
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=35554
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.19 loops=10000)
+                         Buffers: shared hit=35554
+                         ->  Index Scan using orders_customer_date_idx on orders o_4  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.09 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=31102
+                         ->  Bitmap Heap Scan on order_items oi_3  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.15 loops=865)
+                               Recheck Cond: (o_4.order_id = order_id)
+                               Heap Blocks: exact=1857
+                               Buffers: shared hit=4452
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.15 loops=865)
+                                     Index Cond: (order_id = o_4.order_id)
+                                     Index Searches: 865
+                                     Buffers: shared hit=2595
+           SubPlan 6
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=36693
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.21 loops=10000)
+                         Buffers: shared hit=36693
+                         ->  Index Scan using orders_customer_date_idx on orders o_5  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.11 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=31379
+                         ->  Bitmap Heap Scan on order_items oi_4  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.01 loops=1061)
+                               Recheck Cond: (o_5.order_id = order_id)
+                               Heap Blocks: exact=2131
+                               Buffers: shared hit=5314
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.01 loops=1061)
+                                     Index Cond: (order_id = o_5.order_id)
+                                     Index Searches: 1061
+                                     Buffers: shared hit=3183
+           SubPlan 7
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=39290
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.31 loops=10000)
+                         Buffers: shared hit=39290
+                         ->  Index Scan using orders_customer_date_idx on orders o_6  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.14 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=31855
+                         ->  Bitmap Heap Scan on order_items oi_5  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.14 loops=1448)
+                               Recheck Cond: (o_6.order_id = order_id)
+                               Heap Blocks: exact=3091
+                               Buffers: shared hit=7435
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.14 loops=1448)
+                                     Index Cond: (order_id = o_6.order_id)
+                                     Index Searches: 1448
+                                     Buffers: shared hit=4344
+           SubPlan 8
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=39576
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.31 loops=10000)
+                         Buffers: shared hit=39576
+                         ->  Index Scan using orders_customer_date_idx on orders o_7  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.15 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=31923
+                         ->  Bitmap Heap Scan on order_items oi_6  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.05 loops=1516)
+                               Recheck Cond: (o_7.order_id = order_id)
+                               Heap Blocks: exact=3105
+                               Buffers: shared hit=7653
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.05 loops=1516)
+                                     Index Cond: (order_id = o_7.order_id)
+                                     Index Searches: 1516
+                                     Buffers: shared hit=4548
+           SubPlan 9
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=42765
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.43 loops=10000)
+                         Buffers: shared hit=42765
+                         ->  Index Scan using orders_customer_date_idx on orders o_8  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.20 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=32510
+                         ->  Bitmap Heap Scan on order_items oi_7  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.16 loops=1989)
+                               Recheck Cond: (o_8.order_id = order_id)
+                               Heap Blocks: exact=4288
+                               Buffers: shared hit=10255
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.16 loops=1989)
+                                     Index Cond: (order_id = o_8.order_id)
+                                     Index Searches: 1989
+                                     Buffers: shared hit=5967
+           SubPlan 10
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=47073
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.56 loops=10000)
+                         Buffers: shared hit=47073
+                         ->  Index Scan using orders_customer_date_idx on orders o_9  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.27 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=33463
+                         ->  Bitmap Heap Scan on order_items oi_8  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=2672)
+                               Recheck Cond: (o_9.order_id = order_id)
+                               Heap Blocks: exact=5594
+                               Buffers: shared hit=13610
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=2672)
+                                     Index Cond: (order_id = o_9.order_id)
+                                     Index Searches: 2672
+                                     Buffers: shared hit=8016
+           SubPlan 11
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=50697
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.68 loops=10000)
+                         Buffers: shared hit=50697
+                         ->  Index Scan using orders_customer_date_idx on orders o_10  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.32 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=34243
+                         ->  Bitmap Heap Scan on order_items oi_9  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=3231)
+                               Recheck Cond: (o_10.order_id = order_id)
+                               Heap Blocks: exact=6761
+                               Buffers: shared hit=16454
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=3231)
+                                     Index Cond: (order_id = o_10.order_id)
+                                     Index Searches: 3231
+                                     Buffers: shared hit=9693
+           SubPlan 12
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=57459
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.90 loops=10000)
+                         Buffers: shared hit=57459
+                         ->  Index Scan using orders_customer_date_idx on orders o_11  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.43 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=35508
+                         ->  Bitmap Heap Scan on order_items oi_10  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=4305)
+                               Recheck Cond: (o_11.order_id = order_id)
+                               Heap Blocks: exact=9036
+                               Buffers: shared hit=21951
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=4305)
+                                     Index Cond: (order_id = o_11.order_id)
+                                     Index Searches: 4305
+                                     Buffers: shared hit=12915
+           SubPlan 13
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=62473
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.08 loops=10000)
+                         Buffers: shared hit=62473
+                         ->  Index Scan using orders_customer_date_idx on orders o_12  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.51 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=36574
+                         ->  Bitmap Heap Scan on order_items oi_11  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.13 loops=5050)
+                               Recheck Cond: (o_12.order_id = order_id)
+                               Heap Blocks: exact=10749
+                               Buffers: shared hit=25899
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.13 loops=5050)
+                                     Index Cond: (order_id = o_12.order_id)
+                                     Index Searches: 5050
+                                     Buffers: shared hit=15150
+           SubPlan 14
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=10000)
+                   Buffers: shared hit=74554
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.47 loops=10000)
+                         Buffers: shared hit=74554
+                         ->  Index Scan using orders_customer_date_idx on orders o_13  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.70 loops=10000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 10000
+                               Buffers: shared hit=38999
+                         ->  Bitmap Heap Scan on order_items oi_12  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=6967)
+                               Recheck Cond: (o_13.order_id = order_id)
+                               Heap Blocks: exact=14654
+                               Buffers: shared hit=35555
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=6967)
+                                     Index Cond: (order_id = o_13.order_id)
+                                     Index Searches: 6967
+                                     Buffers: shared hit=20901
+   ->  CTE Scan on report r  (cost=0.00..2333650.00 rows=10000 width=468) (actual rows=10000.00 loops=1)
+         Storage: Memory  Maximum Storage: 1191kB
+         Buffers: shared hit=849832
+         SubPlan 16
+           ->  Aggregate  (cost=233.33..233.34 rows=1 width=8) (actual rows=1.00 loops=10000)
+                 Buffers: shared hit=849734
+                 ->  CTE Scan on report r2  (cost=0.00..225.00 rows=3333 width=0) (actual rows=4988.80 loops=10000)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 5011
+                       Storage: Memory  Maximum Storage: 1191kB
+                       Buffers: shared hit=849734
+ Planning:
+   Buffers: shared hit=485
+ Planning Time: 7.337 ms
+ JIT:
+   Functions: 174
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+ Execution Time: 29898.838 ms
+(294 rows)
+
+-- step 1 continued: 20000 customers, same two indexes
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=16528956.21..16529006.21 rows=20000 width=468) (actual rows=20000.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 2865kB
+   Buffers: shared hit=1698392
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..7189288.94 rows=20000 width=441) (actual rows=20000.00 loops=1)
+           Buffers: shared hit=1698389
+           ->  Limit  (cost=0.29..783.52 rows=20000 width=121) (actual rows=20000.00 loops=1)
+                 Buffers: shared hit=317
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.20 rows=40420 width=121) (actual rows=20000.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=317
+           SubPlan 1
+             ->  Aggregate  (cost=39.85..39.86 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=452096
+                   ->  Nested Loop  (cost=8.92..39.84 rows=2 width=11) (actual rows=6.46 loops=20000)
+                         Buffers: shared hit=452096
+                         ->  Bitmap Heap Scan on orders o  (cost=4.47..23.66 rows=1 width=4) (actual rows=3.07 loops=20000)
+                               Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 1
+                               Heap Blocks: exact=78739
+                               Buffers: shared hit=138971
+                               ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.94 loops=20000)
+                                     Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                                     Index Searches: 20000
+                                     Buffers: shared hit=60232
+                         ->  Bitmap Heap Scan on order_items oi  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=61304)
+                               Recheck Cond: (o.order_id = order_id)
+                               Heap Blocks: exact=129213
+                               Buffers: shared hit=313125
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=61304)
+                                     Index Cond: (order_id = o.order_id)
+                                     Index Searches: 61304
+                                     Buffers: shared hit=183912
+           SubPlan 2
+             ->  Aggregate  (cost=23.66..23.67 rows=1 width=8) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=138971
+                   ->  Bitmap Heap Scan on orders o_1  (cost=4.47..23.66 rows=1 width=0) (actual rows=3.07 loops=20000)
+                         Recheck Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                         Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                         Rows Removed by Filter: 1
+                         Heap Blocks: exact=78739
+                         Buffers: shared hit=138971
+                         ->  Bitmap Index Scan on orders_customer_date_idx  (cost=0.00..4.47 rows=5 width=0) (actual rows=3.94 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date < '2026-09-01'::date))
+                               Index Searches: 20000
+                               Buffers: shared hit=60232
+           SubPlan 3
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=66293
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.10 loops=20000)
+                         Buffers: shared hit=66293
+                         ->  Index Scan using orders_customer_date_idx on orders o_2  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.05 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=61275
+                         ->  Bitmap Heap Scan on order_items oi_1  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.14 loops=977)
+                               Recheck Cond: (o_2.order_id = order_id)
+                               Heap Blocks: exact=2087
+                               Buffers: shared hit=5018
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.14 loops=977)
+                                     Index Cond: (order_id = o_2.order_id)
+                                     Index Searches: 977
+                                     Buffers: shared hit=2931
+           SubPlan 4
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=68720
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.14 loops=20000)
+                         Buffers: shared hit=68720
+                         ->  Index Scan using orders_customer_date_idx on orders o_3  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.07 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=61727
+                         ->  Bitmap Heap Scan on order_items oi_2  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=1372)
+                               Recheck Cond: (o_3.order_id = order_id)
+                               Heap Blocks: exact=2877
+                               Buffers: shared hit=6993
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=1372)
+                                     Index Cond: (order_id = o_3.order_id)
+                                     Index Searches: 1372
+                                     Buffers: shared hit=4116
+           SubPlan 5
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=70938
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.18 loops=20000)
+                         Buffers: shared hit=70938
+                         ->  Index Scan using orders_customer_date_idx on orders o_4  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.09 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=62164
+                         ->  Bitmap Heap Scan on order_items oi_3  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.15 loops=1704)
+                               Recheck Cond: (o_4.order_id = order_id)
+                               Heap Blocks: exact=3662
+                               Buffers: shared hit=8774
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.15 loops=1704)
+                                     Index Cond: (order_id = o_4.order_id)
+                                     Index Searches: 1704
+                                     Buffers: shared hit=5112
+           SubPlan 6
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=73554
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.22 loops=20000)
+                         Buffers: shared hit=73554
+                         ->  Index Scan using orders_customer_date_idx on orders o_5  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.11 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=62733
+                         ->  Bitmap Heap Scan on order_items oi_4  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=2125)
+                               Recheck Cond: (o_5.order_id = order_id)
+                               Heap Blocks: exact=4446
+                               Buffers: shared hit=10821
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=2125)
+                                     Index Cond: (order_id = o_5.order_id)
+                                     Index Searches: 2125
+                                     Buffers: shared hit=6375
+           SubPlan 7
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=78119
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.30 loops=20000)
+                         Buffers: shared hit=78119
+                         ->  Index Scan using orders_customer_date_idx on orders o_6  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.14 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=63631
+                         ->  Bitmap Heap Scan on order_items oi_5  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=2835)
+                               Recheck Cond: (o_6.order_id = order_id)
+                               Heap Blocks: exact=5983
+                               Buffers: shared hit=14488
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=2835)
+                                     Index Cond: (order_id = o_6.order_id)
+                                     Index Searches: 2835
+                                     Buffers: shared hit=8505
+           SubPlan 8
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=78965
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.31 loops=20000)
+                         Buffers: shared hit=78965
+                         ->  Index Scan using orders_customer_date_idx on orders o_7  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.15 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=63797
+                         ->  Bitmap Heap Scan on order_items oi_6  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=2983)
+                               Recheck Cond: (o_7.order_id = order_id)
+                               Heap Blocks: exact=6219
+                               Buffers: shared hit=15168
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=2983)
+                                     Index Cond: (order_id = o_7.order_id)
+                                     Index Searches: 2983
+                                     Buffers: shared hit=8949
+           SubPlan 9
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=85333
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.42 loops=20000)
+                         Buffers: shared hit=85333
+                         ->  Index Scan using orders_customer_date_idx on orders o_8  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.20 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=64996
+                         ->  Bitmap Heap Scan on order_items oi_7  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.13 loops=3964)
+                               Recheck Cond: (o_8.order_id = order_id)
+                               Heap Blocks: exact=8445
+                               Buffers: shared hit=20337
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.13 loops=3964)
+                                     Index Cond: (order_id = o_8.order_id)
+                                     Index Searches: 3964
+                                     Buffers: shared hit=11892
+           SubPlan 10
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=94564
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.57 loops=20000)
+                         Buffers: shared hit=94564
+                         ->  Index Scan using orders_customer_date_idx on orders o_9  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.27 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=66996
+                         ->  Bitmap Heap Scan on order_items oi_8  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=5413)
+                               Recheck Cond: (o_9.order_id = order_id)
+                               Heap Blocks: exact=11329
+                               Buffers: shared hit=27568
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=5413)
+                                     Index Cond: (order_id = o_9.order_id)
+                                     Index Searches: 5413
+                                     Buffers: shared hit=16239
+           SubPlan 11
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=101369
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.68 loops=20000)
+                         Buffers: shared hit=101369
+                         ->  Index Scan using orders_customer_date_idx on orders o_10  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.32 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=68412
+                         ->  Bitmap Heap Scan on order_items oi_9  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.09 loops=6475)
+                               Recheck Cond: (o_10.order_id = order_id)
+                               Heap Blocks: exact=13532
+                               Buffers: shared hit=32957
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.09 loops=6475)
+                                     Index Cond: (order_id = o_10.order_id)
+                                     Index Searches: 6475
+                                     Buffers: shared hit=19425
+           SubPlan 12
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=114611
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=0.90 loops=20000)
+                         Buffers: shared hit=114611
+                         ->  Index Scan using orders_customer_date_idx on orders o_11  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.43 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=71000
+                         ->  Bitmap Heap Scan on order_items oi_10  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.10 loops=8552)
+                               Recheck Cond: (o_11.order_id = order_id)
+                               Heap Blocks: exact=17955
+                               Buffers: shared hit=43611
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.10 loops=8552)
+                                     Index Cond: (order_id = o_11.order_id)
+                                     Index Searches: 8552
+                                     Buffers: shared hit=25656
+           SubPlan 13
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=125596
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.09 loops=20000)
+                         Buffers: shared hit=125596
+                         ->  Index Scan using orders_customer_date_idx on orders o_12  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.51 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=73217
+                         ->  Bitmap Heap Scan on order_items oi_11  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.12 loops=10227)
+                               Recheck Cond: (o_12.order_id = order_id)
+                               Heap Blocks: exact=21698
+                               Buffers: shared hit=52379
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.12 loops=10227)
+                                     Index Cond: (order_id = o_12.order_id)
+                                     Index Searches: 10227
+                                     Buffers: shared hit=30681
+           SubPlan 14
+             ->  Aggregate  (cost=24.65..24.66 rows=1 width=32) (actual rows=1.00 loops=20000)
+                   Buffers: shared hit=148943
+                   ->  Nested Loop  (cost=4.87..24.63 rows=2 width=11) (actual rows=1.47 loops=20000)
+                         Buffers: shared hit=148943
+                         ->  Index Scan using orders_customer_date_idx on orders o_13  (cost=0.42..8.45 rows=1 width=4) (actual rows=0.69 loops=20000)
+                               Index Cond: ((customer_id = c.customer_id) AND (order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date))
+                               Filter: (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[]))
+                               Rows Removed by Filter: 0
+                               Index Searches: 20000
+                               Buffers: shared hit=77989
+                         ->  Bitmap Heap Scan on order_items oi_12  (cost=4.45..16.15 rows=3 width=15) (actual rows=2.11 loops=13880)
+                               Recheck Cond: (o_13.order_id = order_id)
+                               Heap Blocks: exact=29314
+                               Buffers: shared hit=70954
+                               ->  Bitmap Index Scan on order_items_order_idx  (cost=0.00..4.45 rows=3 width=0) (actual rows=2.11 loops=13880)
+                                     Index Cond: (order_id = o_13.order_id)
+                                     Index Searches: 13880
+                                     Buffers: shared hit=41640
+   ->  CTE Scan on report r  (cost=0.00..9334000.00 rows=20000 width=468) (actual rows=20000.00 loops=1)
+         Storage: Memory  Maximum Storage: 2381kB
+         Buffers: shared hit=1698389
+         SubPlan 16
+           ->  Aggregate  (cost=466.67..466.68 rows=1 width=8) (actual rows=1.00 loops=20000)
+                 Buffers: shared hit=1698291
+                 ->  CTE Scan on report r2  (cost=0.00..450.00 rows=6667 width=0) (actual rows=9978.21 loops=20000)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 10022
+                       Storage: Memory  Maximum Storage: 2381kB
+                       Buffers: shared hit=1698291
+ Planning:
+   Buffers: shared hit=485
+ Planning Time: 5.549 ms
+ JIT:
+   Functions: 174
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+ Execution Time: 106420.178 ms
+(294 rows)
+

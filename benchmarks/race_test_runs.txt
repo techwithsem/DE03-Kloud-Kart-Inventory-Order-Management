@@ -1,0 +1,223 @@
+﻿race_test.py, 10 consecutive runs, 2026-11-27 09:44
+
+######## run 1 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.35s
+  ok    exactly 50 sold, none oversold, no errors, 5.35s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 2 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.09s
+  ok    exactly 50 sold, none oversold, no errors, 5.09s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 3 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.95s
+  ok    exactly 50 sold, none oversold, no errors, 5.95s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 4 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.17s
+  ok    exactly 50 sold, none oversold, no errors, 5.17s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 5 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 6.54s
+  ok    exactly 50 sold, none oversold, no errors, 6.54s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 6 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.17s
+  ok    exactly 50 sold, none oversold, no errors, 5.17s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 7 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 7.45s
+  ok    exactly 50 sold, none oversold, no errors, 7.45s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 8 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 6.15s
+  ok    exactly 50 sold, none oversold, no errors, 6.15s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 9 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.89s
+  ok    exactly 50 sold, none oversold, no errors, 5.89s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+######## run 10 of 10 ########
+race_test.py — Kloud Kart order placement under contention
+==================================================================
+  place_order found: place_order(p_customer_id bigint, p_product_id bigint, p_quantity integer)
+
+Test 1 — two buyers, one unit, 25 rounds
+  ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
+
+Test 2 — flash sale: 400 buyers, 50 units
+        50 sold, 350 refused, 0 errored, wall clock 5.52s
+  ok    exactly 50 sold, none oversold, no errors, 5.52s
+
+Test 3 — asking for more than exists
+  ok    refused cleanly, stock untouched
+
+Test 4 — audit trail after contention
+  ok    5 sold, 6 movements recorded
+
+==================================================================
+PASSED — exactly one buyer gets the last unit, every time.
+
+
+summary: 10 of 10 runs passed

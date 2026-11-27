@@ -1,0 +1,246 @@
+Timing is on.
+-- a. single-pass report query, computed from scratch (what a refresh does)
+                                                                                      QUERY PLAN                                                                                       
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=24709.01..24760.79 rows=4143 width=48) (actual time=1398.535..1557.853 rows=103165.00 loops=1)
+   Group Key: o.customer_id, ((date_trunc('month'::text, o.order_date))::date)
+   Batches: 21  Memory Usage: 8249kB  Disk Usage: 3712kB
+   Buffers: shared hit=4958 read=1, temp read=1774 written=3238
+   ->  Hash Join  (cost=21855.16..24294.75 rows=41426 width=40) (actual time=848.617..1290.965 rows=124025.00 loops=1)
+         Hash Cond: (o.customer_id = customers.customer_id)
+         Buffers: shared hit=4958 read=1, temp read=1337 written=2451
+         ->  HashAggregate  (cost=20424.71..22341.28 rows=41426 width=52) (actual time=804.567..1173.565 rows=124180.00 loops=1)
+               Group Key: o.order_id
+               Planned Partitions: 4  Batches: 21  Memory Usage: 8249kB  Disk Usage: 11304kB
+               Buffers: shared hit=4437 read=1, temp read=1337 written=2451
+               InitPlan 1
+                 ->  Result  (cost=0.00..0.26 rows=1 width=4) (actual time=0.842..0.843 rows=1.00 loops=1)
+                       Buffers: shared hit=42
+               ->  Hash Anti Join  (cost=5546.20..13043.26 rows=87158 width=27) (actual time=130.894..513.866 rows=261648.00 loops=1)
+                     Hash Cond: (o.order_id = bad.order_id)
+                     Buffers: shared hit=4437 read=1
+                     ->  Hash Join  (cost=5538.05..11934.73 rows=87159 width=27) (actual time=130.769..441.903 rows=261648.00 loops=1)
+                           Hash Cond: (oi.order_id = o.order_id)
+                           Buffers: shared hit=4436
+                           ->  Seq Scan on order_items oi  (cost=0.00..5516.40 rows=335340 width=15) (actual time=0.028..53.994 rows=335340.00 loops=1)
+                                 Buffers: shared hit=2163
+                           ->  Hash  (cost=5020.22..5020.22 rows=41426 width=16) (actual time=130.214..130.216 rows=124180.00 loops=1)
+                                 Buckets: 131072 (originally 65536)  Batches: 1 (originally 1)  Memory Usage: 6845kB
+                                 Buffers: shared hit=2273
+                                 ->  Seq Scan on orders o  (cost=0.00..5020.22 rows=41426 width=16) (actual time=0.902..69.253 rows=124180.00 loops=1)
+                                       Filter: ((status = ANY ('{completed,shipped}'::text[])) AND (order_date < ((InitPlan 1).col1 + 1)))
+                                       Rows Removed by Filter: 35204
+                                       Buffers: shared hit=2273
+                     ->  Hash  (cost=8.14..8.14 rows=1 width=4) (actual time=0.084..0.085 rows=1.00 loops=1)
+                           Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                           Buffers: shared hit=1 read=1
+                           ->  Index Only Scan using order_items_implausible_qty_idx on order_items bad  (cost=0.12..8.14 rows=1 width=4) (actual time=0.075..0.076 rows=1.00 loops=1)
+                                 Heap Fetches: 0
+                                 Index Searches: 1
+                                 Buffers: shared hit=1 read=1
+         ->  Hash  (cost=925.20..925.20 rows=40420 width=4) (actual time=43.326..43.327 rows=40420.00 loops=1)
+               Buckets: 65536  Batches: 1  Memory Usage: 1934kB
+               Buffers: shared hit=521
+               ->  Seq Scan on customers  (cost=0.00..925.20 rows=40420 width=4) (actual time=0.041..21.777 rows=40420.00 loops=1)
+                     Buffers: shared hit=521
+ Planning:
+   Buffers: shared hit=357 read=1
+ Planning Time: 14.294 ms
+ Execution Time: 1576.470 ms
+
+Time: 1597.126 ms (00:01.597)
+-- b. full rebuild of both report summaries, three runs
+               refresh_monday_report                
+----------------------------------------------------
+ monday report rebuilt in 5895 ms, as of 2026-08-31
+
+Time: 5910.892 ms (00:05.911)
+               refresh_monday_report                
+----------------------------------------------------
+ monday report rebuilt in 5972 ms, as of 2026-08-31
+
+Time: 5980.550 ms (00:05.981)
+               refresh_monday_report                
+----------------------------------------------------
+ monday report rebuilt in 5912 ms, as of 2026-08-31
+
+Time: 5919.851 ms (00:05.920)
+-- c. reading the finished report: every customer, ranked
+                                                                               QUERY PLAN                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using mv_customer_spend_report_rank on mv_customer_spend_report  (cost=0.29..1942.59 rows=40420 width=125) (actual time=0.022..14.441 rows=40420.00 loops=1)
+   Index Searches: 1
+   Buffers: shared hit=960
+ Planning:
+   Buffers: shared hit=7
+ Planning Time: 0.168 ms
+ Execution Time: 18.027 ms
+
+Time: 19.726 ms
+-- d. the top 100
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=0.42..16.23 rows=95 width=79) (actual time=0.066..0.160 rows=100.00 loops=1)
+   Sort Key: mv_customer_spend_report.spend_rank, mv_customer_spend_report.customer_id
+   Presorted Key: mv_customer_spend_report.spend_rank
+   Full-sort Groups: 4  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   Buffers: shared hit=5
+   ->  Index Scan using mv_customer_spend_report_rank on mv_customer_spend_report  (cost=0.29..11.95 rows=95 width=79) (actual time=0.015..0.073 rows=100.00 loops=1)
+         Index Cond: (spend_rank <= 100)
+         Index Searches: 1
+         Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=16
+ Planning Time: 0.295 ms
+ Execution Time: 0.195 ms
+
+Time: 1.306 ms
+-- e. category low-stock rollup, live (no stored summary)
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=1379.28..1379.82 rows=215 width=112) (actual time=16.329..16.351 rows=95.00 loops=1)
+   Sort Key: down.path
+   Sort Method: quicksort  Memory: 35kB
+   Buffers: shared hit=47
+   ->  Append  (cost=1273.36..1370.95 rows=215 width=112) (actual time=14.636..15.847 rows=95.00 loops=1)
+         Buffers: shared hit=47
+         CTE product_state
+           ->  Seq Scan on products p  (cost=0.00..120.46 rows=4023 width=14) (actual time=0.013..1.757 rows=4023.00 loops=1)
+                 Filter: (product_name !~~ 'RACE TEST FIXTURE%'::text)
+                 Buffers: shared hit=40
+         ->  Hash Join  (cost=1152.90..1168.47 rows=214 width=112) (actual time=14.635..15.303 rows=94.00 loops=1)
+               Hash Cond: (down.category_id = tree.ancestor_id)
+               Buffers: shared hit=47
+               ->  CTE Scan on down  (cost=66.43..75.01 rows=214 width=76) (actual time=0.032..0.573 rows=94.00 loops=1)
+                     Filter: (NOT is_cycle)
+                     Storage: Memory  Maximum Storage: 34kB
+                     Buffers: shared hit=5
+                     CTE down
+                       ->  Recursive Union  (cost=0.00..66.43 rows=429 width=87) (actual time=0.027..0.468 rows=94.00 loops=1)
+                             Storage: Memory  Maximum Storage: 46kB
+                             Buffers: shared hit=5
+                             ->  Seq Scan on categories c_2  (cost=0.00..1.94 rows=9 width=65) (actual time=0.025..0.042 rows=9.00 loops=1)
+                                   Filter: (parent_id IS NULL)
+                                   Rows Removed by Filter: 85
+                                   Buffers: shared hit=1
+                             ->  Hash Join  (cost=2.36..6.02 rows=42 width=87) (actual time=0.036..0.091 rows=21.25 loops=4)
+                                   Hash Cond: (c_3.parent_id = d.category_id)
+                                   Buffers: shared hit=4
+                                   ->  Seq Scan on categories c_3  (cost=0.00..1.94 rows=94 width=18) (actual time=0.005..0.016 rows=94.00 loops=4)
+                                         Buffers: shared hit=4
+                                   ->  Hash  (cost=1.80..1.80 rows=45 width=72) (actual time=0.018..0.018 rows=23.50 loops=4)
+                                         Buckets: 1024  Batches: 1  Memory Usage: 18kB
+                                         ->  WorkTable Scan on down d  (cost=0.00..1.80 rows=45 width=72) (actual time=0.002..0.008 rows=23.50 loops=4)
+                                               Filter: (NOT is_cycle)
+               ->  Hash  (cost=1083.97..1083.97 rows=200 width=36) (actual time=14.589..14.594 rows=94.00 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 15kB
+                     Buffers: shared hit=42
+                     ->  HashAggregate  (cost=1081.97..1083.97 rows=200 width=36) (actual time=14.515..14.554 rows=94.00 loops=1)
+                           Group Key: tree.ancestor_id
+                           Batches: 1  Memory Usage: 40kB
+                           Buffers: shared hit=42
+                           ->  Hash Left Join  (cost=458.03..821.13 rows=20867 width=14) (actual time=6.138..10.209 rows=12918.00 loops=1)
+                                 Hash Cond: (tree.descendant_id = ps.category_id)
+                                 Buffers: shared hit=42
+                                 ->  CTE Scan on tree  (cost=327.28..369.16 rows=1047 width=8) (actual time=0.010..0.870 rows=259.00 loops=1)
+                                       Filter: (NOT is_cycle)
+                                       Storage: Memory  Maximum Storage: 47kB
+                                       Buffers: shared hit=2
+                                       CTE tree
+                                         ->  Recursive Union  (cost=0.00..327.28 rows=2094 width=41) (actual time=0.008..0.664 rows=259.00 loops=1)
+                                               Storage: Memory  Maximum Storage: 52kB
+                                               Buffers: shared hit=2
+                                               ->  Seq Scan on categories c  (cost=0.00..1.94 rows=94 width=41) (actual time=0.007..0.080 rows=94.00 loops=1)
+                                                     Buffers: shared hit=1
+                                               ->  Hash Join  (cost=3.12..30.44 rows=200 width=41) (actual time=0.027..0.115 rows=41.25 loops=4)
+                                                     Hash Cond: (t.descendant_id = c_1.parent_id)
+                                                     Buffers: shared hit=1
+                                                     ->  WorkTable Scan on tree t  (cost=0.00..18.80 rows=470 width=40) (actual time=0.001..0.014 rows=64.75 loops=4)
+                                                           Filter: (NOT is_cycle)
+                                                     ->  Hash  (cost=1.94..1.94 rows=94 width=8) (actual time=0.071..0.072 rows=85.00 loops=1)
+                                                           Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                                           Buffers: shared hit=1
+                                                           ->  Seq Scan on categories c_1  (cost=0.00..1.94 rows=94 width=8) (actual time=0.026..0.044 rows=94.00 loops=1)
+                                                                 Buffers: shared hit=1
+                                 ->  Hash  (cost=80.46..80.46 rows=4023 width=14) (actual time=6.118..6.119 rows=3986.00 loops=1)
+                                       Buckets: 4096  Batches: 1  Memory Usage: 219kB
+                                       Buffers: shared hit=40
+                                       ->  CTE Scan on product_state ps  (cost=0.00..80.46 rows=4023 width=14) (actual time=0.015..4.597 rows=4023.00 loops=1)
+                                             Storage: Memory  Maximum Storage: 190kB
+                                             Buffers: shared hit=40
+         ->  Aggregate  (cost=80.92..80.95 rows=1 width=112) (actual time=0.522..0.523 rows=1.00 loops=1)
+               ->  CTE Scan on product_state  (cost=0.00..80.46 rows=37 width=6) (actual time=0.056..0.504 rows=37.00 loops=1)
+                     Filter: (category_id IS NULL)
+                     Rows Removed by Filter: 3986
+                     Storage: Memory  Maximum Storage: 190kB
+ Planning:
+   Buffers: shared hit=187
+ Planning Time: 2.440 ms
+ Execution Time: 16.540 ms
+
+Time: 21.561 ms
+-- f. the morning stock drift check
+                                                                                                QUERY PLAN                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=17303.60..17313.60 rows=4003 width=123) (actual time=243.635..243.653 rows=94.00 loops=1)
+   Sort Key: (row_number() OVER w1)
+   Sort Method: quicksort  Memory: 39kB
+   Buffers: shared hit=4286
+   ->  WindowAgg  (cost=16974.03..17064.08 rows=4003 width=123) (actual time=243.519..243.593 rows=94.00 loops=1)
+         Window: w1 AS (ORDER BY v_stock_drift.value_at_risk, v_stock_drift.units_sold_30d, v_stock_drift.product_id ROWS UNBOUNDED PRECEDING)
+         Storage: Memory  Maximum Storage: 17kB
+         Buffers: shared hit=4286
+         ->  Sort  (cost=16974.01..16984.02 rows=4003 width=115) (actual time=243.507..243.527 rows=94.00 loops=1)
+               Sort Key: v_stock_drift.value_at_risk DESC, v_stock_drift.units_sold_30d DESC, v_stock_drift.product_id
+               Sort Method: quicksort  Memory: 39kB
+               Buffers: shared hit=4286
+               ->  Subquery Scan on v_stock_drift  (cost=16502.37..16734.50 rows=4003 width=115) (actual time=240.219..243.422 rows=94.00 loops=1)
+                     Buffers: shared hit=4286
+                     ->  Hash Left Join  (cost=16502.37..16694.47 rows=4003 width=123) (actual time=240.218..243.390 rows=94.00 loops=1)
+                           Hash Cond: (p.product_id = rs.product_id)
+                           Buffers: shared hit=4286
+                           ->  Hash Right Join  (cost=7909.90..8001.40 rows=4003 width=50) (actual time=144.850..147.905 rows=94.00 loops=1)
+                                 Hash Cond: (inventory_log.product_id = p.product_id)
+                                 Filter: (p.stock_quantity IS DISTINCT FROM COALESCE((sum(inventory_log.change_qty) FILTER (WHERE (NOT inventory_log.is_duplicate))), '0'::bigint))
+                                 Rows Removed by Filter: 3929
+                                 Buffers: shared hit=2162
+                                 ->  HashAggregate  (cost=7769.32..7809.76 rows=4044 width=28) (actual time=141.691..143.088 rows=4134.00 loops=1)
+                                       Group Key: inventory_log.product_id
+                                       Batches: 1  Memory Usage: 409kB
+                                       Buffers: shared hit=2122
+                                       ->  Seq Scan on inventory_log  (cost=0.00..4945.66 rows=282366 width=27) (actual time=0.014..58.953 rows=282366.00 loops=1)
+                                             Buffers: shared hit=2122
+                                 ->  Hash  (cost=90.29..90.29 rows=4023 width=34) (actual time=3.121..3.123 rows=4023.00 loops=1)
+                                       Buckets: 4096  Batches: 1  Memory Usage: 301kB
+                                       Buffers: shared hit=40
+                                       ->  Seq Scan on products p  (cost=0.00..90.29 rows=4023 width=34) (actual time=0.020..1.574 rows=4023.00 loops=1)
+                                             Filter: (product_name !~~ 'RACE TEST FIXTURE%'::text)
+                                             Buffers: shared hit=40
+                           ->  Hash  (cost=8578.47..8578.47 rows=1120 width=12) (actual time=95.343..95.347 rows=4033.00 loops=1)
+                                 Buckets: 4096 (originally 2048)  Batches: 1 (originally 1)  Memory Usage: 206kB
+                                 Buffers: shared hit=2124
+                                 ->  Subquery Scan on rs  (cost=8543.46..8578.47 rows=1120 width=12) (actual time=71.228..94.071 rows=4033.00 loops=1)
+                                       Buffers: shared hit=2124
+                                       ->  GroupAggregate  (cost=8543.46..8567.27 rows=1120 width=12) (actual time=71.226..93.274 rows=4033.00 loops=1)
+                                             Group Key: inventory_log_1.product_id
+                                             Buffers: shared hit=2124
+                                             InitPlan 1
+                                               ->  Result  (cost=0.00..0.26 rows=1 width=4) (actual time=0.061..0.062 rows=1.00 loops=1)
+                                                     Buffers: shared hit=1
+                                             InitPlan 2
+                                               ->  Result  (cost=0.00..0.26 rows=1 width=4) (actual time=0.011..0.011 rows=1.00 loops=1)
+                                                     Buffers: shared hit=1
+                                             ->  Sort  (cost=8542.94..8546.21 rows=1308 width=8) (actual time=71.196..79.736 rows=57823.00 loops=1)
+                                                   Sort Key: inventory_log_1.product_id
+                                                   Sort Method: quicksort  Memory: 2892kB
+                                                   Buffers: shared hit=2124
+                                                   ->  Seq Scan on inventory_log inventory_log_1  (cost=0.00..8475.24 rows=1308 width=8) (actual time=0.092..50.567 rows=57823.00 loops=1)
+                                                         Filter: ((NOT is_duplicate) AND (reason = 'sale'::text) AND (created_at >= ((InitPlan 1).col1 - 29)) AND (created_at < ((InitPlan 2).col1 + 1)))
+                                                         Rows Removed by Filter: 224543
+                                                         Buffers: shared hit=2124
+ Planning:
+   Buffers: shared hit=156
+ Planning Time: 1.896 ms
+ Execution Time: 243.816 ms
+
+Time: 248.030 ms

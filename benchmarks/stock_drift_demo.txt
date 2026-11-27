@@ -1,0 +1,41 @@
+BEGIN
+-- 1. the first morning check: every product already drifting
+   status    | products | value_at_risk_ghs 
+-------------+----------+-------------------
+ first check |       94 |            759181
+
+-- 2. someone changes stock by hand, bypassing the routines
+UPDATE 1
+-- the trigger logged it anyway
+ product_id | change_qty |   reason   |                       note                       | stock_after | recorded_by 
+------------+------------+------------+--------------------------------------------------+-------------+-------------
+       5001 |          5 | correction | changed directly, not through the stock routines |          95 | postgres
+
+-- 3. a movement gets written to the log but never applied to stock
+--    (the "recount, not applied" pattern found in the data)
+INSERT 0 1
+-- 4. the next morning check reports only what is new
+ product_id |      product_name      | difference | value_at_risk_ghs |        status        |                        likely_cause                        
+------------+------------------------+------------+-------------------+----------------------+------------------------------------------------------------
+       5002 | Hisense Refrigerator 2 |          3 |                45 | new since last check | a recount was logged but never applied to the stock figure
+
+-- 5. restocking through the proper routine: logged, with stock after
+ stock_after 
+-------------
+         102
+
+ product_id | change_qty | reason  |       note        | stock_after 
+------------+------------+---------+-------------------+-------------
+       5003 |         12 | restock | supplier delivery |         102
+
+-- 6. a correction without a note is refused
+SAVEPOINT
+psql:benchmarks/stock_drift_demo.sql:42: ERROR:  a correction needs a note saying what happened
+CONTEXT:  PL/pgSQL function record_stock_movement(bigint,integer,text,text) line 12 at RAISE
+ROLLBACK
+-- 7. and stock can never go below zero, by any route
+SAVEPOINT
+psql:benchmarks/stock_drift_demo.sql:47: ERROR:  new row for relation "products" violates check constraint "products_stock_not_negative"
+DETAIL:  Failing row contains (5003, Nokia Outdoor Toy 3, 189, 76.38, -1, 2023-07-18 17:42:00, 10).
+ROLLBACK
+ROLLBACK

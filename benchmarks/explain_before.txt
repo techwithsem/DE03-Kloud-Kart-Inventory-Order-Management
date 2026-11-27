@@ -1,0 +1,238 @@
+-- before: naive report, fresh load, no indexes beyond primary keys, 50 customers
+-- postgresql 18.7 in docker on the development laptop
+                                                                                                                 QUERY PLAN                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=7964677.54..7964677.67 rows=50 width=468) (actual rows=50.00 loops=1)
+   Sort Key: ((SubPlan 16))
+   Sort Method: quicksort  Memory: 30kB
+   Buffers: shared hit=1269143
+   CTE report
+     ->  Subquery Scan on c  (cost=0.29..7964616.13 rows=50 width=441) (actual rows=50.00 loops=1)
+           Buffers: shared hit=1269140
+           ->  Limit  (cost=0.29..2.25 rows=50 width=121) (actual rows=50.00 loops=1)
+                 Buffers: shared hit=3
+                 ->  Index Scan using customers_pkey on customers  (cost=0.29..1583.03 rows=40420 width=121) (actual rows=50.00 loops=1)
+                       Index Searches: 1
+                       Buffers: shared hit=3
+           SubPlan 1
+             ->  Aggregate  (cost=11494.48..11494.49 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=162185
+                   ->  Hash Join  (cost=5082.38..11494.46 rows=2 width=11) (actual rows=6.62 loops=50)
+                         Hash Cond: (oi.order_id = o.order_id)
+                         Buffers: shared hit=162185
+                         ->  Seq Scan on order_items oi  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=336559.00 loops=45)
+                               Buffers: shared hit=97335
+                         ->  Hash  (cost=5082.37..5082.37 rows=1 width=4) (actual rows=2.92 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o  (cost=0.00..5082.37 rows=1 width=4) (actual rows=2.92 loops=50)
+                                     Filter: ((order_date < '2026-09-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159381
+                                     Buffers: shared hit=64850
+           SubPlan 2
+             ->  Aggregate  (cost=5082.37..5082.38 rows=1 width=8) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=64850
+                   ->  Seq Scan on orders o_1  (cost=0.00..5082.37 rows=1 width=0) (actual rows=2.92 loops=50)
+                         Filter: ((order_date < '2026-09-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                         Rows Removed by Filter: 159381
+                         Buffers: shared hit=64850
+           SubPlan 3
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=73502
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.26 loops=50)
+                         Hash Cond: (oi_1.order_id = o_2.order_id)
+                         Buffers: shared hit=73502
+                         ->  Seq Scan on order_items oi_1  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=336559.00 loops=4)
+                               Buffers: shared hit=8652
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.08 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_2  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.08 loops=50)
+                                     Filter: ((order_date >= '2025-09-01'::date) AND (order_date < '2025-10-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 4
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=75667
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.30 loops=50)
+                         Hash Cond: (oi_2.order_id = o_3.order_id)
+                         Buffers: shared hit=75667
+                         ->  Seq Scan on order_items oi_2  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=280466.00 loops=6)
+                               Buffers: shared hit=10817
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.10 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_3  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.10 loops=50)
+                                     Filter: ((order_date >= '2025-10-01'::date) AND (order_date < '2025-11-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 5
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=75667
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.24 loops=50)
+                         Hash Cond: (oi_3.order_id = o_4.order_id)
+                         Buffers: shared hit=75667
+                         ->  Seq Scan on order_items oi_3  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=280466.00 loops=6)
+                               Buffers: shared hit=10817
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.10 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_4  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.10 loops=50)
+                                     Filter: ((order_date >= '2025-11-01'::date) AND (order_date < '2025-12-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 6
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=73504
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.14 loops=50)
+                         Hash Cond: (oi_4.order_id = o_5.order_id)
+                         Buffers: shared hit=73504
+                         ->  Seq Scan on order_items oi_4  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=269247.40 loops=5)
+                               Buffers: shared hit=8654
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.08 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_5  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.08 loops=50)
+                                     Filter: ((order_date >= '2025-12-01'::date) AND (order_date < '2026-01-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 7
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=82156
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.46 loops=50)
+                         Hash Cond: (oi_5.order_id = o_6.order_id)
+                         Buffers: shared hit=82156
+                         ->  Seq Scan on order_items oi_5  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=299163.67 loops=9)
+                               Buffers: shared hit=17306
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.16 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_6  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.16 loops=50)
+                                     Filter: ((order_date >= '2026-01-01'::date) AND (order_date < '2026-02-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 8
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=84319
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.42 loops=50)
+                         Hash Cond: (oi_6.order_id = o_7.order_id)
+                         Buffers: shared hit=84319
+                         ->  Seq Scan on order_items oi_6  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=302903.20 loops=10)
+                               Buffers: shared hit=19469
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.22 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_7  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.22 loops=50)
+                                     Filter: ((order_date >= '2026-02-01'::date) AND (order_date < '2026-03-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 9
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=79991
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.26 loops=50)
+                         Hash Cond: (oi_7.order_id = o_8.order_id)
+                         Buffers: shared hit=79991
+                         ->  Seq Scan on order_items oi_7  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=336559.00 loops=7)
+                               Buffers: shared hit=15141
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.14 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_8  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.14 loops=50)
+                                     Filter: ((order_date >= '2026-03-01'::date) AND (order_date < '2026-04-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 10
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=75667
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.28 loops=50)
+                         Hash Cond: (oi_8.order_id = o_9.order_id)
+                         Buffers: shared hit=75667
+                         ->  Seq Scan on order_items oi_8  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=280466.00 loops=6)
+                               Buffers: shared hit=10817
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.12 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_9  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.12 loops=50)
+                                     Filter: ((order_date >= '2026-04-01'::date) AND (order_date < '2026-05-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 11
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=97297
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.82 loops=50)
+                         Hash Cond: (oi_9.order_id = o_10.order_id)
+                         Buffers: shared hit=97297
+                         ->  Seq Scan on order_items oi_9  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=315524.12 loops=16)
+                               Buffers: shared hit=32447
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.30 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_10  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.30 loops=50)
+                                     Filter: ((order_date >= '2026-05-01'::date) AND (order_date < '2026-06-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 12
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=97297
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.56 loops=50)
+                         Hash Cond: (oi_10.order_id = o_11.order_id)
+                         Buffers: shared hit=97297
+                         ->  Seq Scan on order_items oi_10  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=315524.12 loops=16)
+                               Buffers: shared hit=32447
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.34 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_11  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.34 loops=50)
+                                     Filter: ((order_date >= '2026-06-01'::date) AND (order_date < '2026-07-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 13
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=101621
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=0.86 loops=50)
+                         Hash Cond: (oi_11.order_id = o_12.order_id)
+                         Buffers: shared hit=101621
+                         ->  Seq Scan on order_items oi_11  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=336559.00 loops=17)
+                               Buffers: shared hit=36771
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.44 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_12  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.44 loops=50)
+                                     Filter: ((order_date >= '2026-07-01'::date) AND (order_date < '2026-08-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159384
+                                     Buffers: shared hit=64850
+           SubPlan 14
+             ->  Aggregate  (cost=11892.94..11892.95 rows=1 width=32) (actual rows=1.00 loops=50)
+                   Buffers: shared hit=125414
+                   ->  Hash Join  (cost=5480.84..11892.92 rows=2 width=11) (actual rows=1.66 loops=50)
+                         Hash Cond: (oi_12.order_id = o_13.order_id)
+                         Buffers: shared hit=125414
+                         ->  Seq Scan on order_items oi_12  (cost=0.00..5528.59 rows=336559 width=15) (actual rows=336559.00 loops=28)
+                               Buffers: shared hit=60564
+                         ->  Hash  (cost=5480.83..5480.83 rows=1 width=4) (actual rows=0.72 loops=50)
+                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                               Buffers: shared hit=64850
+                               ->  Seq Scan on orders o_13  (cost=0.00..5480.83 rows=1 width=4) (actual rows=0.72 loops=50)
+                                     Filter: ((order_date >= '2026-08-01'::date) AND (order_date < '2026-09-01'::date) AND (customer_id = c.customer_id) AND (lower(TRIM(BOTH FROM status)) = ANY ('{completed,complete,shipped}'::text[])))
+                                     Rows Removed by Filter: 159383
+                                     Buffers: shared hit=64850
+   ->  CTE Scan on report r  (cost=0.00..60.00 rows=50 width=468) (actual rows=50.00 loops=1)
+         Storage: Memory  Maximum Storage: 22kB
+         Buffers: shared hit=1269140
+         SubPlan 16
+           ->  Aggregate  (cost=1.17..1.18 rows=1 width=8) (actual rows=1.00 loops=50)
+                 Buffers: shared hit=1240148
+                 ->  CTE Scan on report r2  (cost=0.00..1.12 rows=17 width=0) (actual rows=24.30 loops=50)
+                       Filter: (total_spent > r.total_spent)
+                       Rows Removed by Filter: 26
+                       Storage: Memory  Maximum Storage: 22kB
+                       Buffers: shared hit=1240148
+ Planning:
+   Buffers: shared hit=337
+ Planning Time: 4.269 ms
+ JIT:
+   Functions: 196
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+ Execution Time: 17304.249 ms
+(232 rows)
+
