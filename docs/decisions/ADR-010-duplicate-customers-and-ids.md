@@ -6,36 +6,20 @@
 
 ## Duplicate customers
 
-### Context
+**Context:** 533 emails appear on more than one record (1,068 records), mostly the same person twice ("Abena Adjei" and "ABENA ADJEI"). Each record is ranked separately, so a good customer split in two can fall out of the top 100.
 
-533 email addresses appear on more than one customer record (1,068 records in all). Most look like the same person signing up twice: "Abena Adjei" and "ABENA ADJEI", same email. Each record gets ranked separately in the Monday report, so a good customer split in two can drop out of the top 100.
+**Decision:** flag them, don't merge.
 
-### Decision
+**Why not merge:** merging moves orders and can't be cleanly undone, two people in one household can share an email, and the application may rely on emails not being unique. A merge needs someone to review each pair, plus an application rule to stop new duplicates (recommended in the memo).
 
-Flagged, not merged. The list is in `dq.chk_duplicate_customers`.
-
-### Why not merge
-
-Merging moves orders between records and can't be cleanly undone. Two people in one household can share an email. And the email column has never been unique, so the application may rely on that. A merge needs someone who can look at each pair, and a rule in the application to stop new duplicates. That's a recommendation in the memo.
-
-### Cost to Nana if this is wrong
-
-Some customers are ranked lower than they should be. The report's totals for the business as a whole are unaffected.
+**Cost to Nana if wrong:** some customers rank lower than they should. Business-wide totals are unaffected.
 
 ## Where new ids come from
 
-### Context
+**Context:** ids had no default, so the application had to invent them. Two checkouts at once can invent the same id, and one fails.
 
-Every table's id was a plain number with no default, so the application had to invent the next id itself. Two checkouts at the same moment can invent the same one, and one of them fails.
+**Decision:** orders, order lines and log rows now get identity columns that start after the highest existing id. They're safe under any amount of concurrency.
 
-### Decision
+**Alternative rejected:** `max(id) + 1`, which is the same race in a new place.
 
-Orders, order lines and log rows now get their ids from the database, starting after the highest id already used. That's a PostgreSQL identity column, which is safe under any amount of concurrency.
-
-### Alternative rejected
-
-`max(id) + 1` in the order function. That's the same race we're trying to remove, in a new place.
-
-### Trade-off
-
-Ids can now have gaps: a failed checkout uses up a number. Ids are labels, not a count, so nothing should depend on them being consecutive. If an auditor expects unbroken invoice numbers, that should be a separate invoice number, not the order id.
+**Trade-off:** a failed checkout uses up an id, so there can be gaps. Ids are labels, not counts. If an auditor needs unbroken numbering, that should be a separate invoice number.

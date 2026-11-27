@@ -1,4 +1,4 @@
-# ADR-008: An audit trail an auditor can actually walk
+# ADR-008: An audit trail an auditor can walk
 
 **Status:** accepted
 **Files:** `sql/02_schema_changes.sql`, `sql/05_stock_movements.sql`, `sql/11_roles.sql`
@@ -6,29 +6,29 @@
 
 ## Context
 
-Nana wants proof of what happened: every sale, restock and correction. The old log had no link to orders, no "stock after" figure, no record of who made a change, free-text reasons, notes like "??" and "see WhatsApp msg", and nothing to stop someone changing stock without logging it.
+The old log had no link to orders, no "stock after", no record of who made a change, notes like "??", and nothing stopping stock changing without a log entry.
 
 ## Decision
 
-- **Every movement says what caused it.** New columns: `order_id` (which order), `stock_after` (the stock straight after the movement) and `recorded_by` (which database user). With `stock_after`, an auditor can check each step without adding up the whole history.
-- **Two doors, both logged.** Sales go through `place_order`. Everything else (restock, return, damage, correction, stock take) goes through `record_stock_movement`, which refuses corrections and damage with no note.
-- **A trigger catches the back door.** If anyone changes stock any other way, for instance a hand-typed `UPDATE`, the trigger writes it to the log as a correction "changed directly, not through the stock routines". It can't be done silently.
-- **No double logging.** The two routines set a flag for their own transaction, so the trigger knows they've already written the row.
-- **Nobody edits history.** Duplicate rows are flagged, not deleted. The roles in `11_roles.sql` give no one but the owner the right to update or delete log rows. The checkout application can't touch stock or the log at all except through `place_order`.
+- **New columns:** `order_id`, `stock_after` and `recorded_by`. With `stock_after`, each step can be checked without adding up the whole history.
+- **Two doors, both logged:** sales go through `place_order`; restocks, returns, damage, corrections and stock takes go through `record_stock_movement`, which refuses a correction or damage entry without a note.
+- **A trigger covers the back door:** any other change to stock (such as a hand-typed `UPDATE`) is logged as "changed directly, not through the stock routines".
+- **No double logging:** the routines set a flag for their own transaction, so the trigger skips what they've already logged.
+- **Nobody edits history:** duplicates are flagged, not deleted, and the roles give no one except the owner the right to update or delete log rows. The checkout app can touch stock only through `place_order`.
 - **Reasons are a fixed list:** sale, restock, return, correction, damage, stock_take, opening_balance.
 
-## Alternatives I rejected
+## Alternatives rejected
 
 | Option | Why not |
 |---|---|
-| Do all logging in the trigger | The trigger doesn't know which order caused a sale or why someone restocked. The routines do, so they log, and the trigger is the safety net. |
-| A trigger that blocks deletes on the log | `race_test.py` cleans up its own test rows by deleting them, so a blocking trigger would break the test. Permissions do the same job for real users without that problem. |
-| Separate audit tables per change type | More tables, harder to walk. One log with a reason is what the business already understands. |
+| Log everything from the trigger | The trigger can't know which order or why |
+| A trigger that blocks deletes | `race_test.py` deletes its own test rows, so it would break the test. Permissions do the job instead. |
+| Separate audit tables per change type | More to walk through, for no benefit |
 
-## Cost to Nana if this is wrong
+## Cost to Nana if wrong
 
-The old trail can't be fully trusted (see the diagnosis). Paid orders hold 24,031 more units than the log shows as sold, only 166 products agree exactly, and refunds of 21,531 units left just 1,017 units logged as returned. From here on, each new sale is tied to its order, so that gap can't grow. If someone with owner rights edits the log directly, the trail won't show it. That's an access question for Nana, not something the database can solve on its own.
+The old trail can't be trusted: paid orders hold 24,031 more units than were logged as sold, only 166 products agree exactly, and refunds of 21,531 units left just 1,017 logged as returned. From now on every sale carries its order, so that gap can't grow. Anyone with owner rights could still edit the log; that's an access policy for Nana to set.
 
 ## What it survives
 
-Flash sales. Every one of the 50 sales in the flash-sale test, all fired at once, left a movement with its order id and the stock after it.
+Flash sales: every one of the 50 flash-sale sales left a movement with its order and stock after.

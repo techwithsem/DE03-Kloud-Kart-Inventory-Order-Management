@@ -6,31 +6,28 @@
 
 ## Context
 
-"Total spent" sounds obvious until you look at the data. Three things had to be settled before any figure in the report means anything.
-
-1. **Which orders count.** Status is one of pending, shipped, completed, cancelled, refunded (after cleanup; before it, fifteen spellings).
-2. **Which amount.** Every order has a header total (`orders.total_amount`, written at checkout) and its lines (quantity × price paid). On 1,590 orders they disagree.
-3. **Which customers.** 210 orders belong to customer ids that don't exist.
+Three questions had to be settled before "total spent" meant anything: which orders count, which amount to use (the header `total_amount` disagrees with the lines on 1,590 orders), and what to do with 210 orders whose customers don't exist.
 
 ## Decision
 
-- **Completed and shipped orders count.** The money's been taken and the goods have gone. Pending orders aren't paid for yet. Cancelled and refunded orders gave the money back.
-- **Spend is the sum of the lines**, not the header total. The lines are what the customer actually chose, at the price on the day. The mismatched header totals aren't random: they're the line total multiplied by exactly 0.75, 0.9, 1.1 or 1.25. That's a calculation going wrong at checkout, not a customer paying something different.
-- **Unknown customers are left out of the per-customer report.** There's no one to attribute the spend to. Their ₵665k is listed in the diagnosis so it isn't lost.
+- **Completed and shipped orders count.** Pending orders aren't paid yet; cancelled and refunded orders gave the money back.
+- **Spend is the sum of the lines** (quantity × price paid), not the header. The mismatched headers are the line total × exactly 0.75, 0.9, 1.1 or 1.25: a checkout calculation fault, not what the customer chose.
+- **Orders with a line over 100 units are excluded.** Five were corrected; the one left is on a cancelled order.
+- **Unknown customers are left out** of the per-customer report. Their ₵665k is listed in the diagnosis.
 
-## Alternatives I rejected
+## Alternatives rejected
 
 | Option | Why not |
 |---|---|
-| Use `total_amount` | It's wrong on ~1,600 orders by a fixed percentage, which points to a bug at checkout. Using it would put that bug into every Monday report. |
-| Count pending orders too | Some pending orders never get paid. It would overstate what customers have actually spent. |
-| Count refunded orders, subtract later | Adwoa doesn't track refunds separately, so it would just overstate spend. |
-| Fix the header totals to match the lines | Possibly right, but the header might be what the customer was charged. That's finance's call, with bank records, not something to change from a database. |
+| Use `total_amount` | It's wrong by a fixed percentage on 1,590 orders |
+| Count pending orders | Some are never paid |
+| Count refunds and subtract later | Adwoa doesn't track refunds separately |
+| Rewrite header totals to match the lines | The header may be what was actually charged. That's for finance to decide from payment records. |
 
-## Cost to Nana if this is wrong
+## Cost to Nana if wrong
 
-If finance confirms customers were charged the header total, not the lines, then roughly 1,600 orders in the report carry the wrong figure. That's a small share of 159,000 orders, but some customers would move up or down the ranking. Switching is a one-line change in `v_order_spend`. The bigger risk is the opposite one: if the header totals are wrong and the till really charged them, customers were over- or under-charged by those fixed percentages. **That needs checking against payment records, and I'd put it high on the list.**
+If customers were actually charged the header totals, about 1,600 orders carry the wrong figure and some rankings shift. Switching is a one-line change in `v_order_spend`. The bigger worry is that those customers were charged wrongly at all. **Check against payment records.**
 
 ## What it survives
 
-The definition lives in one view. Every figure in the report (totals, monthly columns, running totals, ranking) is built from it, so they can't drift apart, and if the definition changes it changes everywhere at once.
+The definition lives in one view, so every figure (totals, months, running totals, rank) changes together. `sql/12_self_checks.sql` re-derives the total from the raw tables on every build.
