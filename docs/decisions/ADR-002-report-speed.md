@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/08_monday_report.sql`, `sql/07_indexes.sql`. Evidence in `docs/measurement_report.md`.
+**Figures from:** [measurement_report.md](../measurement_report.md) and the raw output in [benchmarks/](../../benchmarks/)
 
 ## Context
 

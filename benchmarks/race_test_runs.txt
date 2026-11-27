@@ -1,4 +1,4 @@
-﻿race_test.py, 10 consecutive runs, 2026-11-27 09:44
+﻿race_test.py, 10 consecutive runs, 2026-11-27 10:05
 
 ######## run 1 of 10 ########
 race_test.py — Kloud Kart order placement under contention
@@ -9,8 +9,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.35s
-  ok    exactly 50 sold, none oversold, no errors, 5.35s
+        50 sold, 350 refused, 0 errored, wall clock 5.49s
+  ok    exactly 50 sold, none oversold, no errors, 5.49s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -31,8 +31,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.09s
-  ok    exactly 50 sold, none oversold, no errors, 5.09s
+        50 sold, 350 refused, 0 errored, wall clock 5.44s
+  ok    exactly 50 sold, none oversold, no errors, 5.44s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -53,8 +53,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.95s
-  ok    exactly 50 sold, none oversold, no errors, 5.95s
+        50 sold, 350 refused, 0 errored, wall clock 7.52s
+  ok    exactly 50 sold, none oversold, no errors, 7.52s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -75,8 +75,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.17s
-  ok    exactly 50 sold, none oversold, no errors, 5.17s
+        50 sold, 350 refused, 0 errored, wall clock 5.64s
+  ok    exactly 50 sold, none oversold, no errors, 5.64s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -97,8 +97,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 6.54s
-  ok    exactly 50 sold, none oversold, no errors, 6.54s
+        50 sold, 350 refused, 0 errored, wall clock 5.91s
+  ok    exactly 50 sold, none oversold, no errors, 5.91s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -119,8 +119,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.17s
-  ok    exactly 50 sold, none oversold, no errors, 5.17s
+        50 sold, 350 refused, 0 errored, wall clock 5.92s
+  ok    exactly 50 sold, none oversold, no errors, 5.92s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -141,8 +141,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 7.45s
-  ok    exactly 50 sold, none oversold, no errors, 7.45s
+        50 sold, 350 refused, 0 errored, wall clock 5.71s
+  ok    exactly 50 sold, none oversold, no errors, 5.71s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -163,8 +163,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 6.15s
-  ok    exactly 50 sold, none oversold, no errors, 6.15s
+        50 sold, 350 refused, 0 errored, wall clock 6.35s
+  ok    exactly 50 sold, none oversold, no errors, 6.35s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -185,8 +185,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.89s
-  ok    exactly 50 sold, none oversold, no errors, 5.89s
+        50 sold, 350 refused, 0 errored, wall clock 5.69s
+  ok    exactly 50 sold, none oversold, no errors, 5.69s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched
@@ -207,8 +207,8 @@ Test 1 — two buyers, one unit, 25 rounds
   ok    25/25 rounds: exactly one winner, stock 0, one order, no errors
 
 Test 2 — flash sale: 400 buyers, 50 units
-        50 sold, 350 refused, 0 errored, wall clock 5.52s
-  ok    exactly 50 sold, none oversold, no errors, 5.52s
+        50 sold, 350 refused, 0 errored, wall clock 6.55s
+  ok    exactly 50 sold, none oversold, no errors, 6.55s
 
 Test 3 — asking for more than exists
   ok    refused cleanly, stock untouched

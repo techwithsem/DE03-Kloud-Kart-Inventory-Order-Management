@@ -25,6 +25,8 @@ SET client_min_messages = warning;
 \ir 06_place_order.sql
 \echo '== 07 indexes'
 \ir 07_indexes.sql
+\echo '== analyze, so the report is built with fresh statistics'
+ANALYZE;
 \echo '== 08 monday report'
 \ir 08_monday_report.sql
 \echo '== 09 category low-stock rollup'
@@ -33,8 +35,8 @@ SET client_min_messages = warning;
 \ir 10_stock_drift.sql
 \echo '== 11 roles and permissions'
 \ir 11_roles.sql
-
-ANALYZE;
+\echo '== 12 self checks'
+\ir 12_self_checks.sql
 
 \echo '== done. data quality before and after:'
 SELECT finding, rows_before, rows_now

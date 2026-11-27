@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/00_preflight.sql` (`report_settings`, `report_as_of()`), `sql/08_monday_report.sql`
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Context
 

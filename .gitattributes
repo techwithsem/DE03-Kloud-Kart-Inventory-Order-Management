@@ -12,3 +12,4 @@
 
 # the supplied bundle is kept byte for byte as shipped.
 M03_Resources/** -text
+*.sha256 text eol=lf

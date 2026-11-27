@@ -86,7 +86,7 @@ FROM dq.order_item_price_fixes f
 WHERE f.order_item_id = oi.order_item_id
   AND oi.unit_price IS DISTINCT FROM f.new_unit_price;
 
--- 3b. impossible quantities (999, 9999). where the order total pins down the real
+-- 4. impossible quantities (999, 9999). where the order total pins down the real
 -- quantity as a whole number, use it. the original is kept in dq.order_item_quantity_fixes.
 CREATE TABLE IF NOT EXISTS dq.order_item_quantity_fixes (
     order_item_id  integer PRIMARY KEY,
@@ -107,7 +107,7 @@ FROM dq.order_item_quantity_fixes f
 WHERE f.order_item_id = oi.order_item_id
   AND oi.quantity <> f.new_quantity;
 
--- 4. order lines whose order doesn't exist. with no customer and no date they can't go in
+-- 5. order lines whose order doesn't exist. with no customer and no date they can't go in
 -- any report, and they block the link between lines and orders. they're moved out, not
 -- destroyed, in case the missing orders turn up.
 INSERT INTO dq.removed_order_items
@@ -119,10 +119,15 @@ ON CONFLICT (order_item_id) DO NOTHING;
 DELETE FROM order_items oi
 WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.order_id = oi.order_id);
 
--- 5. the category loop. "seasonal promotions" and "promotions" each claimed the other as
+-- 6. the category loop. "seasonal promotions" and "promotions" each claimed the other as
 -- parent. promotions is the broader one, so it becomes a top-level category and seasonal
 -- promotions sits under it. "clearance" pointed at a category that doesn't exist and
 -- becomes top level.
+--
+-- this is a one-off repair of the loop found in this extract, so it names the categories.
+-- it can't recur: 04_constraints.sql adds a trigger that refuses any new loop, and
+-- dq.chk_category_tree would list one if it ever got in another way. the dead-end rule
+-- below is general and handles any parent that doesn't exist.
 INSERT INTO dq.category_fixes (category_id, old_parent_id, new_parent_id, reason)
 SELECT category_id, parent_id, NULL::integer, 'part of a loop with seasonal promotions, made top level'
 FROM categories
@@ -141,7 +146,7 @@ FROM dq.category_fixes f
 WHERE f.category_id = c.category_id
   AND c.parent_id IS DISTINCT FROM f.new_parent_id;
 
--- 6. stock movements logged twice. only proven doubles are flagged: repeats where the
+-- 7. stock movements logged twice. only proven doubles are flagged: repeats where the
 -- stock figure agrees with the log once the copy is taken out. the other repeats agree
 -- with stock as they are, and look like two real sales in the same second. flagged rows
 -- stay in the table because an auditor needs to see that they were there.

@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/06_place_order.sql`, `sql/05_stock_movements.sql`
+**Figures from:** [measurement_report.md](../measurement_report.md) and the raw output in [benchmarks/](../../benchmarks/)
 
 ## Context
 
@@ -46,7 +47,7 @@ Triggers *are* the right tool for something else here: catching stock changes ma
 | Advisory locks | Works, but it's a second locking system the team has to understand, for no gain over the row lock we get for free. |
 | Version number on the row, retry on conflict | Same retry storm as `SERIALIZABLE`. |
 | `NOWAIT` / `SKIP LOCKED` | Would tell customers "out of stock" just because someone else was mid-checkout, while stock was still there. That's lying to them. |
-| Turn off the wait for the disk on commit | Measured: 10× faster on this laptop. But a power cut could lose the last moments of confirmed, paid orders. Wrong trade for a shop taking payments. |
+| Turn off the wait for the disk on commit | Measured: 50 ms down to 5 ms per order on this laptop (measurement report, section 3). But a power cut could lose the last moments of confirmed, paid orders. Wrong trade for a shop taking payments. |
 | Fixing it in the application | Every place that sells would have to get it right. The database is the one place every sale passes through. |
 
 ## Evidence

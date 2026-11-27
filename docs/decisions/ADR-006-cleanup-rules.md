@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/03_cleanup.sql`, `sql/04_constraints.sql`
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Context
 

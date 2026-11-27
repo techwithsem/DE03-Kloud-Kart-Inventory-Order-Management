@@ -7,6 +7,30 @@
 --
 -- drop-then-add keeps the file safe to re-run.
 
+-- columns every row must have. the data already has a value in each of these on every
+-- row, so nothing old breaks; this stops a new row arriving half-filled. order line prices
+-- are the exception: seven old lines still have none (see dq.chk_unpriced_order_lines),
+-- so new lines are covered by order_items_price_present below instead.
+ALTER TABLE categories    ALTER COLUMN category_name  SET NOT NULL;
+ALTER TABLE customers     ALTER COLUMN full_name      SET NOT NULL;
+ALTER TABLE customers     ALTER COLUMN email          SET NOT NULL;
+ALTER TABLE customers     ALTER COLUMN registered_at  SET NOT NULL;
+ALTER TABLE products      ALTER COLUMN product_name   SET NOT NULL;
+ALTER TABLE products      ALTER COLUMN price          SET NOT NULL;
+ALTER TABLE products      ALTER COLUMN stock_quantity SET NOT NULL;
+ALTER TABLE products      ALTER COLUMN created_at     SET NOT NULL;
+ALTER TABLE orders        ALTER COLUMN customer_id    SET NOT NULL;
+ALTER TABLE orders        ALTER COLUMN order_date     SET NOT NULL;
+ALTER TABLE orders        ALTER COLUMN status         SET NOT NULL;
+ALTER TABLE orders        ALTER COLUMN total_amount   SET NOT NULL;
+ALTER TABLE order_items   ALTER COLUMN order_id       SET NOT NULL;
+ALTER TABLE order_items   ALTER COLUMN product_id     SET NOT NULL;
+ALTER TABLE order_items   ALTER COLUMN quantity       SET NOT NULL;
+ALTER TABLE inventory_log ALTER COLUMN product_id     SET NOT NULL;
+ALTER TABLE inventory_log ALTER COLUMN change_qty     SET NOT NULL;
+ALTER TABLE inventory_log ALTER COLUMN reason         SET NOT NULL;
+ALTER TABLE inventory_log ALTER COLUMN created_at     SET NOT NULL;
+
 -- order status: only the five agreed values.
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_valid;
 ALTER TABLE orders

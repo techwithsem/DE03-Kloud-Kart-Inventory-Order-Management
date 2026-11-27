@@ -27,8 +27,7 @@ CREATE SCHEMA IF NOT EXISTS dq;
 -- the reports will use the real current date.
 CREATE TABLE IF NOT EXISTS report_settings (
     singleton   boolean PRIMARY KEY DEFAULT true CHECK (singleton),
-    as_of_date  date,
-    updated_at  timestamptz NOT NULL DEFAULT now()
+    as_of_date  date
 );
 
 INSERT INTO report_settings (as_of_date)

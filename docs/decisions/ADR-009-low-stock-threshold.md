@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/02_schema_changes.sql` (`products.reorder_level`), `sql/09_category_rollup.sql`
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Context
 

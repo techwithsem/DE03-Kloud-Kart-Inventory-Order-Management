@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/08_monday_report.sql` (`v_order_spend`)
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Context
 

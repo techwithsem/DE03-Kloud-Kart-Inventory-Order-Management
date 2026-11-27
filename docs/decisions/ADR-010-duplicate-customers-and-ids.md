@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/01_diagnosis.sql` (`dq.chk_duplicate_customers`), `sql/02_schema_changes.sql`
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Duplicate customers
 

@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/09_category_rollup.sql`, `sql/04_constraints.sql` (loop trigger)
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Context
 

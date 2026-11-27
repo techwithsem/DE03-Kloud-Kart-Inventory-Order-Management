@@ -12,7 +12,7 @@
 --
 -- stock_drift_check() is meant to run every morning. it saves a snapshot and returns only
 -- the products that started drifting since the last run, so yesterday's problems don't
--- bury today's.
+-- bury today's. snapshots older than 90 days are cleared as it goes.
 
 CREATE OR REPLACE VIEW v_stock_drift AS
 WITH ledger AS (
@@ -89,6 +89,10 @@ DECLARE
     v_now      timestamptz := clock_timestamp();
 BEGIN
     SELECT max(s.snapshot_at) INTO v_previous FROM dq.stock_drift_snapshots s;
+
+    -- keep 90 days of history, so the table doesn't grow forever.
+    DELETE FROM dq.stock_drift_snapshots s
+    WHERE s.snapshot_at < v_now - interval '90 days';
 
     INSERT INTO dq.stock_drift_snapshots (snapshot_at, product_id, difference)
     SELECT v_now, d.product_id, d.difference

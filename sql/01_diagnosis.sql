@@ -3,10 +3,13 @@
 -- each view returns the offending rows. dq.findings rolls them up into one ranked list,
 -- and dq.findings_baseline keeps the counts from the very first run, before cleanup.
 --
+-- the checks are listed in the order they depend on each other, not by danger. the danger
+-- ranking is in dq.findings at the bottom of this file.
+--
 -- money is in ghana cedis. "value" means the figure that would be wrong in a report
 -- if the fault were left alone, not money already lost.
 
--- 1. products showing less than zero in stock. stock can't physically be negative,
+-- check: products showing less than zero in stock. stock can't physically be negative,
 -- so every one of these is a unit sold that never existed.
 CREATE OR REPLACE VIEW dq.chk_negative_stock AS
 SELECT product_id, product_name, stock_quantity, price,
@@ -14,7 +17,7 @@ SELECT product_id, product_name, stock_quantity, price,
 FROM products
 WHERE stock_quantity < 0;
 
--- 2. stock on the shelf (products.stock_quantity) against the sum of every movement in the
+-- check: stock on the shelf (products.stock_quantity) against the sum of every movement in the
 -- log. for most products the two agree exactly, so the log is meant to be the history of
 -- the stock figure. where they disagree we try to explain why.
 CREATE OR REPLACE VIEW dq.chk_stock_vs_ledger AS
@@ -63,7 +66,7 @@ LEFT JOIN duplicate_effect d USING (product_id)
 LEFT JOIN unapplied u USING (product_id)
 WHERE p.stock_quantity IS DISTINCT FROM coalesce(l.ledger_qty, 0);
 
--- 3. the same order line entered twice. we only call it a double entry when the order's
+-- check: the same order line entered twice. we only call it a double entry when the order's
 -- own total agrees with the version that has the copy removed.
 CREATE OR REPLACE VIEW dq.chk_duplicate_order_lines AS
 WITH grouped AS (
@@ -95,7 +98,7 @@ JOIN orders o USING (order_id)
 JOIN order_lines ol USING (order_id)
 JOIN extra e USING (order_id);
 
--- 4. order lines with no price, or a price of zero. where the order total matches the
+-- check: order lines with no price, or a price of zero. where the order total matches the
 -- list price, the customer paid and the line just lost its price.
 CREATE OR REPLACE VIEW dq.chk_unpriced_order_lines AS
 WITH flagged AS (
@@ -121,7 +124,7 @@ LEFT JOIN orders o USING (order_id)
 LEFT JOIN repriced r USING (order_id)
 WHERE oi.unit_price IS NULL OR oi.unit_price = 0;
 
--- 4b. quantities nobody orders. the biggest normal line in the data is 10 units; a few
+-- check: quantities nobody orders. the biggest normal line in the data is 10 units; a few
 -- say 999 or 9999, which looks like a placeholder or a slipped finger. the order's own
 -- total shows what the real quantity was.
 CREATE OR REPLACE VIEW dq.chk_implausible_quantities AS
@@ -146,7 +149,7 @@ FROM order_items oi
 JOIN other_lines ol USING (order_item_id)
 JOIN orders o USING (order_id);
 
--- 5. order header total that disagrees with its own lines, for orders whose lines are
+-- check: order header total that disagrees with its own lines, for orders whose lines are
 -- complete and have no copies (those are explained by checks 3 and 4).
 CREATE OR REPLACE VIEW dq.chk_order_total_mismatch AS
 WITH lines AS (
@@ -166,7 +169,7 @@ WHERE NOT l.has_unpriced
   AND o.order_id NOT IN (SELECT order_id FROM dq.chk_implausible_quantities)
   AND abs(o.total_amount - l.line_total) > 0.01;
 
--- 6. status typed fifteen different ways. anything not already in the agreed spelling
+-- check: status typed fifteen different ways. anything not already in the agreed spelling
 -- is counted here.
 CREATE OR REPLACE VIEW dq.chk_status_spellings AS
 SELECT status, count(*) AS orders, sum(total_amount) AS value
@@ -175,19 +178,19 @@ WHERE status IS NULL
    OR status NOT IN ('pending', 'shipped', 'completed', 'cancelled', 'refunded')
 GROUP BY status;
 
--- 7. orders for customers who don't exist.
+-- check: orders for customers who don't exist.
 CREATE OR REPLACE VIEW dq.chk_orders_unknown_customer AS
 SELECT o.order_id, o.customer_id, o.order_date, o.status, o.total_amount
 FROM orders o
 WHERE NOT EXISTS (SELECT 1 FROM customers c WHERE c.customer_id = o.customer_id);
 
--- 8. order lines whose order header is missing.
+-- check: order lines whose order header is missing.
 CREATE OR REPLACE VIEW dq.chk_items_unknown_order AS
 SELECT oi.*, oi.quantity * coalesce(oi.unit_price, 0) AS line_value
 FROM order_items oi
 WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.order_id = oi.order_id);
 
--- 9. the stock trail and the order book don't describe the same sales. per product,
+-- check: the stock trail and the order book don't describe the same sales. per product,
 -- units ordered against units the log says left as sales.
 CREATE OR REPLACE VIEW dq.chk_trail_vs_orders AS
 WITH ordered AS (
@@ -212,13 +215,13 @@ LEFT JOIN ordered o USING (product_id)
 LEFT JOIN logged l USING (product_id)
 WHERE coalesce(o.units_ordered, 0) <> coalesce(l.units_logged_as_sold, 0);
 
--- 10. orders dated after the extract ends (2026-08-31) or in the future.
+-- check: orders dated after the extract ends (2026-08-31) or in the future.
 CREATE OR REPLACE VIEW dq.chk_orders_after_as_of AS
 SELECT order_id, customer_id, order_date, status, total_amount
 FROM orders
 WHERE order_date >= (SELECT report_as_of()) + 1;
 
--- 11. stock movements repeated exactly: same product, quantity, reason and second.
+-- check: stock movements repeated exactly: same product, quantity, reason and second.
 -- not all of these are mistakes. two customers can buy the same thing in the same second.
 -- a repeat only counts as a proven double when the stock figure agrees with the log
 -- once the copy is taken out (see dq.chk_stock_vs_ledger).
@@ -235,20 +238,20 @@ FROM inventory_log l
 GROUP BY l.product_id, l.change_qty, l.reason, l.created_at
 HAVING count(*) > 1;
 
--- 12. stock movements for products that don't exist.
+-- check: stock movements for products that don't exist.
 CREATE OR REPLACE VIEW dq.chk_log_unknown_product AS
 SELECT l.*
 FROM inventory_log l
 WHERE NOT EXISTS (SELECT 1 FROM products p WHERE p.product_id = l.product_id);
 
--- 13. corrections with a note nobody can check later ("??", "see whatsapp msg").
+-- check: corrections with a note nobody can check later ("??", "see whatsapp msg").
 CREATE OR REPLACE VIEW dq.chk_unexplained_corrections AS
 SELECT log_id, product_id, change_qty, created_at, note
 FROM inventory_log
 WHERE reason = 'correction'
   AND (note IS NULL OR note IN ('', '??', 'see WhatsApp msg', 'POS mismatch'));
 
--- 14. categories whose parent chain loops back on itself, or points at nothing.
+-- check: categories whose parent chain loops back on itself, or points at nothing.
 -- walking up from every category, a loop is the walk coming back to where it started.
 CREATE OR REPLACE VIEW dq.chk_category_tree AS
 WITH RECURSIVE up AS (
@@ -269,14 +272,14 @@ FROM categories c
 WHERE c.parent_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM categories p WHERE p.category_id = c.parent_id);
 
--- 15. products with no category at all. they disappear from any category rollup.
+-- check: products with no category at all. they disappear from any category rollup.
 CREATE OR REPLACE VIEW dq.chk_products_no_category AS
 SELECT product_id, product_name, stock_quantity
 FROM products
 WHERE category_id IS NULL
   AND product_name NOT LIKE 'RACE TEST FIXTURE%';
 
--- 16. the same email on more than one customer record. probably the same person twice,
+-- check: the same email on more than one customer record. probably the same person twice,
 -- which splits their spend and pushes them down the ranking.
 CREATE OR REPLACE VIEW dq.chk_duplicate_customers AS
 SELECT lower(trim(email)) AS email_key,

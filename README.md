@@ -21,20 +21,44 @@ Everything runs on plain PostgreSQL. No new services, no new bills.
 ├── sql/                the solution, numbered in run order
 ├── docs/               diagnosis, decisions, measurements, memo, improvement
 ├── benchmarks/         query plans, timings and race test output behind the docs
-└── scripts/            one-command rebuild, and the race test run ten times
+├── scripts/            one-command rebuild, and the race test run ten times
+└── checksums.sha256    sha256 of every supplied file, checked before each load
 ```
+
+| Stage | File |
+|---|---|
+| Check the server can run the test | [sql/00_preflight.sql](sql/00_preflight.sql) |
+| Record every data fault before changing anything | [sql/01_diagnosis.sql](sql/01_diagnosis.sql) |
+| New columns and database-generated ids | [sql/02_schema_changes.sql](sql/02_schema_changes.sql) |
+| Fix only what the data proves, keep copies of originals | [sql/03_cleanup.sql](sql/03_cleanup.sql) |
+| Rules so the faults can't come back | [sql/04_constraints.sql](sql/04_constraints.sql) |
+| Stock routine and audit trigger | [sql/05_stock_movements.sql](sql/05_stock_movements.sql) |
+| Order placement (the race test contract) | [sql/06_place_order.sql](sql/06_place_order.sql) |
+| Indexes | [sql/07_indexes.sql](sql/07_indexes.sql) |
+| Monday report | [sql/08_monday_report.sql](sql/08_monday_report.sql) |
+| Low stock by category | [sql/09_category_rollup.sql](sql/09_category_rollup.sql) |
+| Morning stock drift check | [sql/10_stock_drift.sql](sql/10_stock_drift.sql) |
+| Roles and permissions | [sql/11_roles.sql](sql/11_roles.sql) |
+| Prove the outputs are right, or stop the build | [sql/12_self_checks.sql](sql/12_self_checks.sql) |
 
 ## Running it
 
-You need Docker (or PostgreSQL 18 with `max_connections = 500`) and Python 3.
+You need Docker (or PostgreSQL 18 with `max_connections = 500`), Python 3 and Git. The repository is public.
+
+Tested with: Windows 11, Docker Desktop 4.86 (WSL2), PostgreSQL 18.7 (the script pins `postgres:18.7`), Python 3.14.0 and psycopg2-binary 2.9.13 (pinned in `requirements.txt`).
 
 ```powershell
+# 0. get the code
+git clone https://github.com/techwithsem/DE03-Kloud-Kart-Inventory-Order-Management.git
+cd DE03-Kloud-Kart-Inventory-Order-Management
+
 # 1. python environment for the race test
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# 2. start postgres, load the data fresh, run the whole solution
+# 2. check the supplied files, start postgres, load the data fresh, run the whole
+#    solution and its self checks
 .\scripts\reset_and_run.ps1
 
 # 3. the concurrency test, exactly as shipped

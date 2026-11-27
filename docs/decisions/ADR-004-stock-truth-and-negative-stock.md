@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Files:** `sql/05_stock_movements.sql`, `sql/10_stock_drift.sql`
+**Figures from:** [data_diagnosis.md](../data_diagnosis.md) and the `dq` views in [sql/01_diagnosis.sql](../../sql/01_diagnosis.sql)
 
 ## Context
 
