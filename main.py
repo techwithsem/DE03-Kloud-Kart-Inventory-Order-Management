@@ -32,13 +32,15 @@ IMAGE = "postgres:18.7"
 QUIET = ["-e", "PGOPTIONS=-c client_min_messages=warning"]
 
 
+# prints an error and stops with a non-zero exit code, so scripts and ci can tell it failed.
 def fail(message):
     print(f"error: {message}", file=sys.stderr)
     sys.exit(1)
 
 
+# reads the database settings from .env. if there's no .env yet, creates one with a random
+# 24-character password, so no password ever has to live in the repository.
 def load_env():
-    """read .env, creating it with a random password if it doesn't exist yet."""
     if not ENV_FILE.exists() or "POSTGRES_PASSWORD" not in ENV_FILE.read_text():
         alphabet = "".join(c for c in string.ascii_letters + string.digits if c not in "lIO01o")
         password = "".join(secrets.choice(alphabet) for _ in range(24))
@@ -67,6 +69,8 @@ def load_env():
     return env
 
 
+# runs a docker command. when check is on it returns nothing on failure instead of raising,
+# so callers can decide what a failure means. a missing docker stops with a clear message.
 def docker(*args, check=True, capture=False):
     try:
         result = subprocess.run(["docker", *args], capture_output=capture, text=True)
@@ -77,14 +81,17 @@ def docker(*args, check=True, capture=False):
     return result
 
 
+# runs psql inside the container, so it doesn't need installing on this machine.
+# returns psql's exit code. interactive mode opens a prompt you can type into.
 def psql(env, *args, workdir="/work", interactive=False):
-    """run psql inside the container. returns the exit code."""
     flags = ["-it"] if interactive else []
     cmd = ["exec", *flags, *QUIET, "-w", workdir, env["POSTGRES_CONTAINER"],
            "psql", "-U", "postgres", "-d", env["POSTGRES_DB"], "-X", *args]
     return docker(*cmd, check=False).returncode
 
 
+# compares every supplied file with checksums.sha256 and stops if anything differs, so an
+# edited race_test.py or changed csv is caught before it's loaded.
 def check_bundle():
     print("checking the supplied bundle against checksums.sha256")
     changed = []
@@ -102,6 +109,8 @@ def check_bundle():
         fail("these supplied files differ from what was shipped: " + ", ".join(changed))
 
 
+# makes sure docker is running, starts the postgres container (creating it the first time,
+# reachable only from this computer), then waits up to 60 seconds for it to accept connections.
 def start_container(env):
     name = env["POSTGRES_CONTAINER"]
     if docker("info", check=False, capture=True).returncode != 0:
@@ -129,6 +138,8 @@ def start_container(env):
         time.sleep(0.5)
 
 
+# does the full rebuild: checks the bundle, starts postgres, recreates the database, loads
+# the supplied schema and data, then runs sql/run_all.sql, which ends with the self checks.
 def build(env):
     check_bundle()
     start_container(env)
@@ -153,11 +164,15 @@ def build(env):
     print("\ndone. next: python main.py race")
 
 
+# uses the project's .venv python for the race test if it exists, since that's where
+# psycopg2 is installed. otherwise falls back to the python running this script.
 def python_for_race():
     venv = REPO / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     return str(venv) if venv.exists() else sys.executable
 
 
+# runs the unmodified race_test.py against the database. one run prints straight to the
+# screen; several runs are saved to benchmarks/race_test_runs.txt with a pass count.
 def race(env, runs=1):
     child_env = {**os.environ, "DATABASE_URL": env["DATABASE_URL"]}
     cwd = REPO / "M03_Resources"
@@ -182,8 +197,10 @@ def race(env, runs=1):
     sys.exit(0 if passed == runs else 1)
 
 
+# reads the command from the command line and runs it. no command means a full rebuild,
+# and an unknown one prints the usage at the top of this file.
 def main():
-    # keep our lines in order with psql's output.
+    # keeps our lines in order with psql's output.
     sys.stdout.reconfigure(line_buffering=True)
     args = sys.argv[1:]
     command = args[0] if args else "build"
