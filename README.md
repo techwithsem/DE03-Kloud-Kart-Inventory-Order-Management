@@ -29,18 +29,21 @@ Kloud Kart (about 4,000 orders a day, one PostgreSQL server) was selling the sam
 | [11_roles](sql/11_roles.sql) | Roles and permissions |
 | [12_self_checks](sql/12_self_checks.sql) | Prove the outputs are right, or stop the build |
 
-`M03_Resources/` is the supplied bundle, unchanged; [checksums.sha256](checksums.sha256) proves it. [main.py](main.py) is the one-command rebuild and race test runner; `scripts/` holds the same in PowerShell.
+`M03_Resources/` is the supplied bundle, unchanged; [checksums.sha256](checksums.sha256) proves it. [main.py](main.py) runs everything: the rebuild, single SQL files and the race test.
 
 ## Running it
 
 You need Docker Desktop, Python 3 and Git. It was tested on Windows 11 with Docker Desktop 4.86, PostgreSQL 18.7 (pinned), Python 3.14.0 and psycopg2-binary 2.9.13 (pinned).
 
-```powershell
+```bash
 git clone https://github.com/techwithsem/DE03-Kloud-Kart-Inventory-Order-Management.git
 cd DE03-Kloud-Kart-Inventory-Order-Management
 
 python -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python -m pip ...
+# windows
+.venv\Scripts\python -m pip install -r requirements.txt
+# macos / linux
+.venv/bin/python -m pip install -r requirements.txt
 
 # check the supplied files, start postgres, load fresh, run everything plus the self checks
 python main.py
@@ -56,16 +59,15 @@ Docker Desktop has to be running. `psql` runs inside the container, so you don't
 
 **One file at a time.** The files build on each other, so run them in number order after a fresh load. Any file can be re-run safely.
 
-```powershell
+```bash
 python main.py sql sql/08_monday_report.sql
-python main.py psql        # interactive prompt, \q to quit
+# an interactive prompt; type \q to quit
+python main.py psql
 ```
-
-The PowerShell scripts in `scripts/` do the same jobs, if you prefer them: `reset_and_run.ps1`, `run_race_test_10x.ps1`, and `use_env.ps1` to load `.env` into a session.
 
 **Password.** None is stored in this repository. The first command you run creates a private `.env` with a random password, and git ignores it; `.env.example` shows the format. The database only accepts connections from your own computer. If you change the password, run `docker rm -f kloudkart` first.
 
-**Connections.** The race test opens 400 connections, and PostgreSQL's default limit is 100. The script sets it to 500, and `00_preflight` stops with a clear message if it's lower.
+**Connections.** The race test opens 400 connections, and PostgreSQL's default limit is 100. `main.py` sets it to 500, and `00_preflight` stops with a clear message if it's lower.
 
 ## Using it
 
