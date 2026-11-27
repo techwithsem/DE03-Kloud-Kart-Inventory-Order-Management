@@ -1,4 +1,4 @@
--- before: naive report, fresh load, no indexes beyond primary keys, 50 customers
+-- before: the old monday report (monday_report_before.sql), fresh load, no indexes beyond primary keys, 50 customers
 -- postgresql 18.7 in docker on the development laptop
                                                                                                                  QUERY PLAN                                                                                                                  
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

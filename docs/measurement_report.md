@@ -6,7 +6,7 @@ Every figure comes from a real run. Raw output is in [benchmarks/](../benchmarks
 
 ## 1. Monday report (target: seconds)
 
-**Before.** [naive_report.sql](../benchmarks/naive_report.sql) builds the report the usual way: one subquery per figure, per customer, with the rank found by counting everyone who spent more. It returns the same figures as the new report. A full run would take hours, so I timed slices:
+**Before.** [monday_report_before.sql](../benchmarks/monday_report_before.sql) builds the report the usual way: one subquery per figure, per customer, with the rank found by counting everyone who spent more. It returns the same figures as the new report. A full run would take hours, so I timed slices:
 
 | Version | Customers | Time |
 |---|---|---|
@@ -17,9 +17,9 @@ Every figure comes from a real run. Raw output is in [benchmarks/](../benchmarks
 | With 2 indexes | 10,000 / 20,000 | 29.9 s / 106.4 s |
 | With 2 indexes, scaled up | 40,420 | **~7 minutes** |
 
-Without indexes, the plan re-reads all 336,559 order lines for every customer and month ([explain_before.txt](../benchmarks/explain_before.txt)). Indexes fix the lookups, but the time still grows with the *square* of the customer count: doubling from 10,000 to 20,000 customers made it 3.6× slower. That's the ranking step, which compares every customer with every other one. It's also why Adwoa's report keeps getting slower.
+Without indexes, the plan re-reads all 336,559 order lines for every customer and month ([monday_report_before_timing.txt](../benchmarks/monday_report_before_timing.txt)). Indexes fix the lookups, but the time still grows with the *square* of the customer count: doubling from 10,000 to 20,000 customers made it 3.6× slower. That's the ranking step, which compares every customer with every other one. It's also why Adwoa's report keeps getting slower.
 
-**After.** [08_monday_report.sql](../sql/08_monday_report.sql) reads the orders once and totals them per customer per month, giving 103,165 rows. The monthly columns, running totals (window functions) and ranking (one sort) are all worked out from that. The result is stored and rebuilt on demand ([explain_after.txt](../benchmarks/explain_after.txt)).
+**After.** [08_monday_report.sql](../sql/08_monday_report.sql) reads the orders once and totals them per customer per month, giving 103,165 rows. The monthly columns, running totals (window functions) and ranking (one sort) are all worked out from that. The result is stored and rebuilt on demand ([monday_report_after_timing.txt](../benchmarks/monday_report_after_timing.txt)).
 
 | Step | Time |
 |---|---|
@@ -49,7 +49,7 @@ The full live rollup takes **15–26 ms** ([09_category_rollup.sql](../sql/09_ca
 
 | `race_test.py`, unmodified | Result |
 |---|---|
-| 10 complete runs in a row | **10 passed** ([race_test_runs.txt](../benchmarks/race_test_runs.txt)) |
+| 10 complete runs in a row | **10 passed** ([race_test_10_runs.txt](../benchmarks/race_test_10_runs.txt)) |
 | Two buyers, one unit (25 rounds per run) | 250/250: one winner, one "out of stock", stock 0 |
 | Flash sale: 400 buyers, 50 units | 50 sold, 350 refused, 0 errors, every run |
 | Flash sale wall clock, incl. opening 400 connections | 5.4–8.5 s over the final 10 runs (once 13 s) |

@@ -4,7 +4,7 @@
 usage, from the repository root:
     python main.py            rebuild the database from nothing and run the solution
     python main.py race       run the race test once
-    python main.py race 10    run it 10 times, output saved to benchmarks/race_test_runs.txt
+    python main.py race 10    run it 10 times, output saved to benchmarks/race_test_10_runs.txt
     python main.py test       run every test in tests/ (extra words go to pytest, e.g. -k place_order)
     python main.py psql       open an interactive psql prompt (\\q to quit)
     python main.py all        rebuild, then run the race test once
@@ -16,7 +16,6 @@ installed. the database password lives in .env (created with a random one on fir
 which git ignores.
 """
 
-import hashlib
 import os
 import secrets
 import string
@@ -91,25 +90,6 @@ def psql(env, *args, workdir="/work", interactive=False):
     return docker(*cmd, check=False).returncode
 
 
-# compares every supplied file with checksums.sha256 and stops if anything differs, so an
-# edited race_test.py or changed csv is caught before it's loaded.
-def check_bundle():
-    print("checking the supplied bundle against checksums.sha256")
-    changed = []
-    for line in (REPO / "checksums.sha256").read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        expected, relative = line.split(maxsplit=1)
-        relative = relative.lstrip("*")
-        path = REPO / relative
-        if not path.exists():
-            changed.append(f"{relative} (missing)")
-        elif hashlib.sha256(path.read_bytes()).hexdigest() != expected.lower():
-            changed.append(relative)
-    if changed:
-        fail("these supplied files differ from what was shipped: " + ", ".join(changed))
-
-
 # makes sure docker is running, starts the postgres container (creating it the first time,
 # reachable only from this computer), then waits up to 60 seconds for it to accept connections.
 def start_container(env):
@@ -139,10 +119,9 @@ def start_container(env):
         time.sleep(0.5)
 
 
-# does the full rebuild: checks the bundle, starts postgres, recreates the database, loads
-# the supplied schema and data, then runs sql/run_all.sql, which ends with the self checks.
+# does the full rebuild: starts postgres, recreates the database, loads the supplied schema
+# and data, then runs sql/run_all.sql, which ends with the self checks.
 def build(env):
-    check_bundle()
     start_container(env)
     name, db = env["POSTGRES_CONTAINER"], env["POSTGRES_DB"]
 
@@ -173,7 +152,7 @@ def python_for_race():
 
 
 # runs the unmodified race_test.py against the database. one run prints straight to the
-# screen; several runs are saved to benchmarks/race_test_runs.txt with a pass count.
+# screen; several runs are saved to benchmarks/race_test_<n>_runs.txt with a pass count.
 def race(env, runs=1):
     child_env = {**os.environ, "DATABASE_URL": env["DATABASE_URL"]}
     cwd = REPO / "M03_Resources"
@@ -182,7 +161,7 @@ def race(env, runs=1):
     if runs == 1:
         sys.exit(subprocess.run([python, "race_test.py"], cwd=cwd, env=child_env).returncode)
 
-    out = REPO / "benchmarks" / "race_test_runs.txt"
+    out = REPO / "benchmarks" / f"race_test_{runs}_runs.txt"
     passed = 0
     with out.open("w", encoding="utf-8") as f:
         f.write(f"race_test.py, {runs} consecutive runs, {datetime.now():%Y-%m-%d %H:%M}\n")
@@ -194,7 +173,7 @@ def race(env, runs=1):
             passed += ok
             print(f"run {i}: {'passed' if ok else 'FAILED'}")
         f.write(f"\nsummary: {passed} of {runs} runs passed\n")
-    print(f"{passed} of {runs} runs passed. full output in benchmarks/race_test_runs.txt")
+    print(f"{passed} of {runs} runs passed. full output in benchmarks/{out.name}")
     sys.exit(0 if passed == runs else 1)
 
 

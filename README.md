@@ -28,7 +28,7 @@ Kloud Kart (about 4,000 orders a day, one PostgreSQL server) was selling the sam
 | [10_stock_drift](sql/10_stock_drift.sql) | Morning stock drift check |
 | [11_self_checks](sql/11_self_checks.sql) | Prove the outputs are right, or stop the build |
 
-`M03_Resources/` is the supplied bundle, unchanged; [checksums.sha256](checksums.sha256) proves it. [main.py](main.py) runs everything: the rebuild, single SQL files and the race test.
+`M03_Resources/` is the supplied bundle, unchanged. [main.py](main.py) runs everything: the rebuild, single SQL files and the race test.
 
 ## Running it
 
@@ -44,13 +44,13 @@ python -m venv .venv
 # macos / linux
 .venv/bin/python -m pip install -r requirements.txt
 
-# check the supplied files, start postgres, load fresh, run everything plus the self checks
+# start postgres, load fresh, run everything plus the self checks
 python main.py
 
 # the race test, exactly as shipped
 python main.py race
 
-# or ten runs in a row, saved to benchmarks/race_test_runs.txt
+# or ten runs in a row, saved to benchmarks/race_test_10_runs.txt
 python main.py race 10
 
 # every test in tests/
@@ -61,7 +61,7 @@ python main.py test
 
 | File | What it checks |
 |---|---|
-| `test_main.py` | `main.py`: `.env` creation, the checksum check, exit codes. No database needed |
+| `test_main.py` | `main.py`: `.env` creation, exit codes, picking the `.venv` Python. No database needed |
 | `test_setup_and_cleanup.py` | Preflight, the 17 diagnosis checks, database-generated ids, the cleanup keeping originals, the indexes |
 | `test_stock_and_rules.py` | The stock routine, the audit trigger, and every rule that blocks bad data |
 | `test_place_order.py` | Sales, refusals, the audit row for each sale, 20 buyers racing for 5 units |

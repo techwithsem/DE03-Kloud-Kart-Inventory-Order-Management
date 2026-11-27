@@ -1,4 +1,4 @@
--- stock_drift_demo.sql
+-- stock_drift_check_demo.sql
 -- shows the audit trail and the morning drift check working. everything runs inside a
 -- transaction that is rolled back at the end, so the database is left as it was.
 

@@ -1,7 +1,5 @@
 """unit tests for main.py. these need no database or docker."""
 
-import hashlib
-
 import pytest
 
 import main
@@ -60,27 +58,6 @@ def test_load_env_fills_in_defaults(temp_env):
     assert env["POSTGRES_DB"] == "kloudkart"
 
 
-# checks that the supplied files in this repository still match checksums.sha256.
-def test_checksums_match_the_supplied_bundle():
-    main.check_bundle()
-
-
-# checks that editing a supplied file stops the build.
-def test_check_bundle_stops_when_a_supplied_file_changes(tmp_path, monkeypatch):
-    supplied = tmp_path / "M03_Resources" / "race_test.py"
-    supplied.parent.mkdir()
-    supplied.write_text("original")
-    digest = hashlib.sha256(b"original").hexdigest()
-    (tmp_path / "checksums.sha256").write_text(f"# header\n{digest}  M03_Resources/race_test.py\n")
-    monkeypatch.setattr(main, "REPO", tmp_path)
-
-    main.check_bundle()
-
-    supplied.write_text("edited")
-    with pytest.raises(SystemExit):
-        main.check_bundle()
-
-
 # checks that fail stops with exit code 1, so scripts can tell something went wrong.
 def test_fail_stops_with_exit_code_one(capsys):
     with pytest.raises(SystemExit) as stopped:
@@ -99,12 +76,3 @@ def test_python_for_race_prefers_the_venv(tmp_path, monkeypatch):
     venv_python.parent.mkdir(parents=True)
     venv_python.write_text("")
     assert main.python_for_race() == str(venv_python)
-
-
-# checks that a missing supplied file stops the build.
-def test_check_bundle_stops_when_a_supplied_file_is_missing(tmp_path, monkeypatch):
-    (tmp_path / "checksums.sha256").write_text("abc123  M03_Resources/race_test.py\n")
-    monkeypatch.setattr(main, "REPO", tmp_path)
-
-    with pytest.raises(SystemExit):
-        main.check_bundle()

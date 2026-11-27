@@ -30,12 +30,12 @@ INSERT 0 1
 
 -- 6. a correction without a note is refused
 SAVEPOINT
-psql:benchmarks/stock_drift_demo.sql:42: ERROR:  a correction needs a note saying what happened
+psql:benchmarks/stock_drift_check_demo.sql:42: ERROR:  a correction needs a note saying what happened
 CONTEXT:  PL/pgSQL function record_stock_movement(bigint,integer,text,text) line 12 at RAISE
 ROLLBACK
 -- 7. and stock can never go below zero, by any route
 SAVEPOINT
-psql:benchmarks/stock_drift_demo.sql:47: ERROR:  new row for relation "products" violates check constraint "products_stock_not_negative"
+psql:benchmarks/stock_drift_check_demo.sql:47: ERROR:  new row for relation "products" violates check constraint "products_stock_not_negative"
 DETAIL:  Failing row contains (5003, Nokia Outdoor Toy 3, 189, 76.38, -1, 2023-07-18 17:42:00, 10).
 ROLLBACK
 ROLLBACK

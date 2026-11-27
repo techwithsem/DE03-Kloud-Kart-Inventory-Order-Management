@@ -1,4 +1,4 @@
--- naive_report.sql
+-- monday_report_before.sql
 -- the "before" version of the monday report, written the way it usually starts out: one
 -- row per customer, and every figure worked out by its own subquery that goes back to the
 -- full order history for that one customer.
@@ -7,7 +7,7 @@
 -- with like. run it against a fresh load (no indexes) to get the "before" number.
 --
 -- usage:
---   psql -v customer_limit=200 -f benchmarks/naive_report.sql
+--   psql -v customer_limit=200 -f benchmarks/monday_report_before.sql
 -- customer_limit keeps the run short enough to measure; the full figure is scaled up
 -- from it in docs/measurement_report.md.
 
