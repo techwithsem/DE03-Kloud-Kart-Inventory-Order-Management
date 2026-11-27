@@ -1,7 +1,7 @@
 -- kloud kart: full solution, run top to bottom against a fresh load.
 --
 -- load the supplied schema and data first, then run this file from the repository root.
--- the exact commands are in readme.md, or scripts/reset_and_run.ps1 does all of it.
+-- the exact commands are in readme.md, or `python main.py` does all of it.
 --
 -- every file is safe to run more than once.
 

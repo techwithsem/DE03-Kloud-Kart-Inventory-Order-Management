@@ -29,7 +29,7 @@ Kloud Kart (about 4,000 orders a day, one PostgreSQL server) was selling the sam
 | [11_roles](sql/11_roles.sql) | Roles and permissions |
 | [12_self_checks](sql/12_self_checks.sql) | Prove the outputs are right, or stop the build |
 
-`M03_Resources/` is the supplied bundle, unchanged; [checksums.sha256](checksums.sha256) proves it. `scripts/` holds the one-command rebuild and the race test runner.
+`M03_Resources/` is the supplied bundle, unchanged; [checksums.sha256](checksums.sha256) proves it. [main.py](main.py) is the one-command rebuild and race test runner; `scripts/` holds the same in PowerShell.
 
 ## Running it
 
@@ -40,27 +40,30 @@ git clone https://github.com/techwithsem/DE03-Kloud-Kart-Inventory-Order-Managem
 cd DE03-Kloud-Kart-Inventory-Order-Management
 
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.venv\Scripts\python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python -m pip ...
 
 # check the supplied files, start postgres, load fresh, run everything plus the self checks
-.\scripts\reset_and_run.ps1
+python main.py
 
 # the race test, exactly as shipped
-. .\scripts\use_env.ps1
-cd M03_Resources; python race_test.py; cd ..
+python main.py race
 
-# or ten runs in a row, saved to benchmarks\race_test_runs.txt
-.\scripts\run_race_test_10x.ps1
+# or ten runs in a row, saved to benchmarks/race_test_runs.txt
+python main.py race 10
 ```
+
+Docker Desktop has to be running. `psql` runs inside the container, so you don't need it installed. `main.py` uses the `.venv` Python for the race test automatically, so there's nothing to activate. The same commands work on Windows, macOS and Linux.
 
 **One file at a time.** The files build on each other, so run them in number order after a fresh load. Any file can be re-run safely.
 
 ```powershell
-docker exec -w /work kloudkart psql -U postgres -d kloudkart -v ON_ERROR_STOP=1 -f sql/08_monday_report.sql
+python main.py sql sql/08_monday_report.sql
+python main.py psql        # interactive prompt, \q to quit
 ```
 
-**Password.** None is stored in this repository. The first script you run creates a private `.env` with a random password, and git ignores it; `.env.example` shows the format. The database only accepts connections from your own computer. If you change the password, run `docker rm -f kloudkart` first.
+The PowerShell scripts in `scripts/` do the same jobs, if you prefer them: `reset_and_run.ps1`, `run_race_test_10x.ps1`, and `use_env.ps1` to load `.env` into a session.
+
+**Password.** None is stored in this repository. The first command you run creates a private `.env` with a random password, and git ignores it; `.env.example` shows the format. The database only accepts connections from your own computer. If you change the password, run `docker rm -f kloudkart` first.
 
 **Connections.** The race test opens 400 connections, and PostgreSQL's default limit is 100. The script sets it to 500, and `00_preflight` stops with a clear message if it's lower.
 

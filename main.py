@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""One entry point for the whole project. Works on Windows, macOS and Linux.
+"""one entry point for the whole project. works on windows, macos and linux.
 
 usage, from the repository root:
-    python KloudKart.py            rebuild the database from nothing and run the solution
-    python KloudKart.py race       run the race test once
-    python KloudKart.py race 10    run it 10 times, output saved to benchmarks/race_test_runs.txt
-    python KloudKart.py psql       open an interactive psql prompt (\\q to quit)
-    python KloudKart.py all        rebuild, then run the race test once
-    python KloudKart.py sql sql/08_monday_report.sql
-                                   run one sql file and print the output
+    python main.py            rebuild the database from nothing and run the solution
+    python main.py race       run the race test once
+    python main.py race 10    run it 10 times, output saved to benchmarks/race_test_runs.txt
+    python main.py psql       open an interactive psql prompt (\\q to quit)
+    python main.py all        rebuild, then run the race test once
+    python main.py sql sql/08_monday_report.sql
+                              run one sql file and print the output
 
-Only needs Docker and Python 3. psql runs inside the container, so it doesn't need to be
-installed. The database password lives in .env (created with a random one on first run),
+only needs docker and python 3. psql runs inside the container, so it doesn't need to be
+installed. the database password lives in .env (created with a random one on first run),
 which git ignores.
 """
 
@@ -27,7 +27,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
 ENV_FILE = REPO / ".env"
-IMAGE = "postgres:18.7"  # the exact build every figure in docs/ was measured on
+# the exact postgres build every figure in docs/ was measured on.
+IMAGE = "postgres:18.7"
 QUIET = ["-e", "PGOPTIONS=-c client_min_messages=warning"]
 
 
@@ -37,7 +38,7 @@ def fail(message):
 
 
 def load_env():
-    """Read .env, creating it with a random password if it doesn't exist yet."""
+    """read .env, creating it with a random password if it doesn't exist yet."""
     if not ENV_FILE.exists() or "POSTGRES_PASSWORD" not in ENV_FILE.read_text():
         alphabet = "".join(c for c in string.ascii_letters + string.digits if c not in "lIO01o")
         password = "".join(secrets.choice(alphabet) for _ in range(24))
@@ -77,7 +78,7 @@ def docker(*args, check=True, capture=False):
 
 
 def psql(env, *args, workdir="/work", interactive=False):
-    """Run psql inside the container. Returns the exit code."""
+    """run psql inside the container. returns the exit code."""
     flags = ["-it"] if interactive else []
     cmd = ["exec", *flags, *QUIET, "-w", workdir, env["POSTGRES_CONTAINER"],
            "psql", "-U", "postgres", "-d", env["POSTGRES_DB"], "-X", *args]
@@ -149,7 +150,7 @@ def build(env):
     if psql(env, "-v", "ON_ERROR_STOP=1", "-f", "sql/run_all.sql"):
         fail("run_all.sql failed")
 
-    print("\ndone. next: python KloudKart.py race")
+    print("\ndone. next: python main.py race")
 
 
 def python_for_race():
@@ -182,7 +183,8 @@ def race(env, runs=1):
 
 
 def main():
-    sys.stdout.reconfigure(line_buffering=True)  # keep our lines in order with psql's
+    # keep our lines in order with psql's output.
+    sys.stdout.reconfigure(line_buffering=True)
     args = sys.argv[1:]
     command = args[0] if args else "build"
     env = load_env()
@@ -196,7 +198,7 @@ def main():
         race(env, int(args[1]) if len(args) > 1 else 1)
     elif command == "sql":
         if len(args) < 2:
-            fail("which file? e.g. python KloudKart.py sql sql/08_monday_report.sql")
+            fail("which file? e.g. python main.py sql sql/08_monday_report.sql")
         target = Path(args[1])
         if not (REPO / target).exists():
             fail(f"{target} not found (paths are relative to the repository root)")

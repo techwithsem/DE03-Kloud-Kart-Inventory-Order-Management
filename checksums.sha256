@@ -1,5 +1,5 @@
 # sha256 checksums of the supplied bundle, exactly as shipped.
-# scripts/reset_and_run.ps1 checks these before loading, so a changed csv or an edited
+# main.py and scripts/reset_and_run.ps1 check these before loading, so a changed csv or an edited
 # race_test.py is caught before anything runs.
 65f77f0247cf0d1f6590ee57a6a5cf42ba222943b5c33b91ef5ff4b54f6050f9  M03_Resources/data/categories.csv
 e6b5a096aa88ff86363b34abbcbbbff1b01187444c9a65fc346c1966260d9ea2  M03_Resources/data/customers.csv
