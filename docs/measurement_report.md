@@ -58,6 +58,19 @@ The full live rollup takes **15–26 ms** ([09_category_rollup.sql](../sql/09_ca
 
 **Why about 6 s here.** Only one checkout at a time can take stock from a product, and each holds its turn until its order is safely on disk. On this laptop that disk write takes 50–380 ms; with the wait switched off (test only) a call takes 5 ms. Losers write nothing, so the queue is roughly 50 winners × the disk write. On a normal server SSD (about 1 ms per write) it should clear in well under a second. **That figure is an estimate, not measured.** I kept the safe setting, because switching the wait off could lose confirmed orders in a power cut.
 
+### Beyond the brief: 4,000 orders at once
+
+[load_test.py](../benchmarks/load_test.py), run with `python main.py load`, works the way a real website would: 100 pooled connections take turns sending 4,000 buy attempts, all released together. Output: [load_test_results.txt](../benchmarks/load_test_results.txt).
+
+| Scenario | Sold | Out of stock | Errors / "busy" | Oversold | Wall clock (3 runs) |
+|---|---|---|---|---|---|
+| A. 4,000 people, one product with 50 units | 50 | 3,950 | 0 / 0 | none | 1.02–1.22 s |
+| B. 4,000 people, 100 products with 30 units each | 3,000 | 1,000 | 0 / 0 | none | 1.22–1.30 s |
+
+Every sale had exactly one order and one stock movement. Median wait per attempt was 8 ms (A) and 23 ms (B).
+
+This is much faster than the 400-buyer race test (5–9 s), because the race test opens 400 brand-new connections at the same moment, and each one starts a new database process. Reusing a pool of 100 connections avoids that. **The lesson for go-live: put a connection pool (PgBouncer or the app's own) in front of the database.** With 4,000 direct connections, 3,500 would be refused, because the limit is 500.
+
 ## 4. Morning stock drift check
 
 The full priced list takes 0.24–0.66 s.
