@@ -52,7 +52,23 @@ python main.py race
 
 # or ten runs in a row, saved to benchmarks/race_test_runs.txt
 python main.py race 10
+
+# every test in tests/
+python main.py test
 ```
+
+**Tests.** `tests/` checks every part of the solution:
+
+| File | What it checks |
+|---|---|
+| `test_main.py` | `main.py`: `.env` creation, the checksum check, exit codes. No database needed |
+| `test_setup_and_cleanup.py` | Preflight, the 17 diagnosis checks, database-generated ids, the cleanup keeping originals, the indexes |
+| `test_stock_and_rules.py` | The stock routine, the audit trigger, and every rule that blocks bad data |
+| `test_place_order.py` | Sales, refusals, the audit row for each sale, 20 buyers racing for 5 units |
+| `test_reports.py` | The report against the raw tables, months, running totals, top 100, the rollup, the drift check |
+| `test_end_to_end.py` | A refresh picking up a new order, the low-stock and count lists, the build's self checks, and `race_test.py` run unmodified |
+
+Database tests run inside a transaction that's rolled back, so they change nothing, and they're skipped if the database isn't running. `python main.py test -k place_order` runs a few; `python main.py test -m "not slow"` skips the race test.
 
 Docker Desktop has to be running. `psql` runs inside the container, so you don't need it installed. `main.py` uses the `.venv` Python for the race test automatically, so there's nothing to activate. The same commands work on Windows, macOS and Linux.
 
