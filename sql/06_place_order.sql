@@ -1,4 +1,5 @@
 -- 06_place_order.sql
+-- needs: 05 (it logs each sale the same way).
 -- placing an order without ever selling stock that isn't there.
 --
 -- how it works: the stock check and the stock decrement are one statement.

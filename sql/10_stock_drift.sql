@@ -1,4 +1,5 @@
 -- 10_stock_drift.sql
+-- needs: 05 (a complete stock log).
 -- improvement beyond the brief: a morning stock drift check.
 --
 -- nana's real complaint is that he can't trust his stock counts. the brief fixes
@@ -52,7 +53,7 @@ FROM products p
 LEFT JOIN ledger l USING (product_id)
 LEFT JOIN recent_sales rs USING (product_id)
 WHERE p.stock_quantity IS DISTINCT FROM coalesce(l.ledger_qty, 0)
-  AND p.product_name NOT LIKE 'RACE TEST FIXTURE%';
+  AND NOT is_test_fixture(p.product_name);
 
 -- the physical count list: biggest money at risk first, busiest sellers breaking ties,
 -- since a wrong count on a fast seller is the next oversell waiting to happen.

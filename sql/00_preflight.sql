@@ -1,4 +1,5 @@
 -- 00_preflight.sql
+-- needs: the supplied schema.sql and load.sql, loaded into an empty database.
 -- check the server can actually run this solution and its test before we touch anything.
 
 DO $$
@@ -43,4 +44,16 @@ STABLE
 SET search_path = public, pg_temp
 AS $$
     SELECT coalesce((SELECT as_of_date FROM public.report_settings), current_date);
+$$;
+
+-- race_test.py creates its own products, named 'RACE TEST FIXTURE ...', and deletes them
+-- when it finishes. it can't be edited and marks them no other way, so the name is the only
+-- way to tell them apart. every view that counts products leaves them out through this one
+-- function, so the rule lives in one place.
+CREATE OR REPLACE FUNCTION is_test_fixture(p_product_name text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+    SELECT p_product_name LIKE 'RACE TEST FIXTURE%';
 $$;

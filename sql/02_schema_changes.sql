@@ -1,4 +1,5 @@
 -- 02_schema_changes.sql
+-- needs: 01, so the before figures are recorded first.
 -- new columns and id generation. nothing here changes existing data.
 -- every new column is nullable or has a default, because race_test.py inserts products
 -- without knowing about them.

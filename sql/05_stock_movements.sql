@@ -1,4 +1,5 @@
 -- 05_stock_movements.sql
+-- needs: 02 (the new log columns) and 04 (the stock check).
 -- the audit trail. two ways stock can change, and both leave a row in inventory_log:
 --
 --   1. through place_order (sales) or record_stock_movement (restocks, returns, damage,

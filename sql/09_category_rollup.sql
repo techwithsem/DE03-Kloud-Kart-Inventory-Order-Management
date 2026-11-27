@@ -1,4 +1,5 @@
 -- 09_category_rollup.sql
+-- needs: 00 (is_test_fixture) and 04 (a category tree with no loops).
 -- low stock at a glance, rolled up through the category tree to whatever depth it has.
 --
 -- a product counts towards its own category and every category above it, so
@@ -58,7 +59,7 @@ WITH product_state AS (
            p.stock_quantity = 0 AS is_out,
            p.stock_quantity > 0 AND p.stock_quantity <= p.reorder_level AS is_low
     FROM products p
-    WHERE p.product_name NOT LIKE 'RACE TEST FIXTURE%'
+    WHERE NOT is_test_fixture(p.product_name)
 ),
 rolled_up AS (
     SELECT d.ancestor_id AS category_id,
@@ -103,5 +104,5 @@ SELECT coalesce(cp.path, 'Uncategorised') AS category,
 FROM products p
 LEFT JOIN v_category_paths cp USING (category_id)
 WHERE p.stock_quantity <= p.reorder_level
-  AND p.product_name NOT LIKE 'RACE TEST FIXTURE%'
+  AND NOT is_test_fixture(p.product_name)
 ORDER BY category, p.stock_quantity, p.product_name;

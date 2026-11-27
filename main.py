@@ -5,7 +5,6 @@ usage, from the repository root:
     python main.py            rebuild the database from nothing and run the solution
     python main.py race       run the race test once
     python main.py race 10    run it 10 times, output saved to benchmarks/race_test_10_runs.txt
-    python main.py test       run every test in tests/ (extra words go to pytest, e.g. -k place_order)
     python main.py psql       open an interactive psql prompt (\\q to quit)
     python main.py all        rebuild, then run the race test once
     python main.py sql sql/08_monday_report.sql
@@ -177,12 +176,6 @@ def race(env, runs=1):
     sys.exit(0 if passed == runs else 1)
 
 
-# runs the tests in tests/ with pytest from the project's .venv. the database tests use the
-# build made by `python main.py`, and are skipped if it isn't running.
-def run_tests(extra_args):
-    sys.exit(subprocess.run([python_for_race(), "-m", "pytest", *extra_args], cwd=REPO).returncode)
-
-
 # reads the command from the command line and runs it. no command means a full rebuild,
 # and an unknown one prints the usage at the top of this file.
 def main():
@@ -199,8 +192,6 @@ def main():
         race(env)
     elif command == "race":
         race(env, int(args[1]) if len(args) > 1 else 1)
-    elif command == "test":
-        run_tests(args[1:])
     elif command == "sql":
         if len(args) < 2:
             fail("which file? e.g. python main.py sql sql/08_monday_report.sql")

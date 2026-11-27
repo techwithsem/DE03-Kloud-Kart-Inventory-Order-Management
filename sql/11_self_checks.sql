@@ -1,4 +1,5 @@
 -- 11_self_checks.sql
+-- needs: every file before it. it's the last step of the build.
 -- checks that the main outputs are actually right, run at the end of every build.
 -- each check works the answer out a second, independent way and stops the build with a
 -- clear message if the two disagree. nothing here changes data: the order test runs
@@ -89,7 +90,7 @@ BEGIN
     -- "uncategorised" must hold every product exactly once between them.
     SELECT count(*) INTO v_products
       FROM products
-     WHERE product_name NOT LIKE 'RACE TEST FIXTURE%';
+     WHERE NOT is_test_fixture(product_name);
 
     SELECT sum(products) INTO v_rolled_top_level
       FROM v_low_stock_by_category

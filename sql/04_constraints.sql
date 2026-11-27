@@ -1,4 +1,5 @@
 -- 04_constraints.sql
+-- needs: 03, because a rule can only be added once the rows that break it are fixed.
 -- rules the database enforces from now on, so the faults we just found can't come back.
 --
 -- not valid means "check every new or changed row, but don't fail on the old ones".

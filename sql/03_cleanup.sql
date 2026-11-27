@@ -1,4 +1,5 @@
 -- 03_cleanup.sql
+-- needs: 01 (the checks it fixes) and 02 (the new columns).
 -- fixes that are safe to make. the rule throughout: only change a row when the data itself
 -- proves what the right value is, and keep a copy of every row we change or remove in dq.
 -- anything we can't prove stays as it is and is flagged instead.

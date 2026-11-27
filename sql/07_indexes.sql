@@ -1,4 +1,5 @@
 -- 07_indexes.sql
+-- needs: 02 and 03, so the indexes are built on the cleaned tables.
 -- the original database has no indexes beyond primary keys. each one below is here for a
 -- reason we measured (see docs/measurement_report.md), not added on spec.
 

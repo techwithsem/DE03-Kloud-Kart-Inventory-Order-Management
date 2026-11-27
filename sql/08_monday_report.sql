@@ -1,4 +1,5 @@
 -- 08_monday_report.sql
+-- needs: 03 (clean data) and 07 (the indexes the refresh relies on).
 -- adwoa's monday customer-spending report.
 --
 -- what counts as spend: the order's lines (quantity x price paid), for orders that are

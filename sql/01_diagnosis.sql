@@ -1,4 +1,5 @@
 -- 01_diagnosis.sql
+-- needs: 00 (the dq schema and report_as_of). runs before anything is changed.
 -- every integrity check, as a view in the dq schema so it can be re-run at any time.
 -- each view returns the offending rows. dq.findings rolls them up into one ranked list,
 -- and dq.findings_baseline keeps the counts from the very first run, before cleanup.
@@ -277,7 +278,7 @@ CREATE OR REPLACE VIEW dq.chk_products_no_category AS
 SELECT product_id, product_name, stock_quantity
 FROM products
 WHERE category_id IS NULL
-  AND product_name NOT LIKE 'RACE TEST FIXTURE%';
+  AND NOT is_test_fixture(product_name);
 
 -- check: the same email on more than one customer record. probably the same person twice,
 -- which splits their spend and pushes them down the ranking.
